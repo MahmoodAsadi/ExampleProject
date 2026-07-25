@@ -55,6 +55,10 @@ Build/*
 # Packaged builds
 Packages/
 
+# Local agent instructions and working files
+/.agents/
+/AGENTS.md
+
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
 Build/*/**
