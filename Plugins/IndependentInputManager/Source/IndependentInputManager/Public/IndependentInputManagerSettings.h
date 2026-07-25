@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+
 #include "IndependentInputManagerTypes.h"
 #include "IndependentInputManagerSettings.generated.h"
 
@@ -69,9 +70,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = "Connected Devices")
 	TArray<FJoystickDeviceInfo> ConnectedDevices;
 
+	/** Keep Windows XInput devices visible for diagnostics, but let Unreal's XInput interface own their gameplay input. */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
 	bool bIgnoreXInputDevices = true;
 
+	/** Completely exclude SDL virtual devices from discovery, profiles, delegates, and gameplay input. */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
 	bool bIgnoreVirtualDevices = false;
 

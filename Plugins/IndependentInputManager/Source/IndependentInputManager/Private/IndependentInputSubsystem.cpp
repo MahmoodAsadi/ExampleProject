@@ -2,11 +2,12 @@
 
 #include "IndependentInputSubsystem.h"
 
+#include "SDL3/SDL_gamepad.h"
+#include "SDL3/SDL_hints.h"
+
 #include "IndependentInputDevice.h"
 #include "IndependentInputManager.h"
 #include "IndependentInputManagerSettings.h"
-#include "SDL3/SDL_gamepad.h"
-#include "SDL3/SDL_hints.h"
 
 #define LOCTEXT_NAMESPACE "UIndependentInputSubsystem"
 
@@ -551,6 +552,7 @@ void UIndependentInputSubsystem::ShutdownSDL()
 		UnregisterDevice(SDLDevices.CreateConstIterator()->Key, true);
 	}
 
+	IgnoredDeviceIds.Reset();
 	SDL_Quit();
 	bInitialized = false;
 	UE_LOG(LogIndependentInput, Log, TEXT("IndependentInputManager Shutdown"));
@@ -618,6 +620,15 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	if (ConnectedDevices.Contains(DeviceId))
 		return false;
 
+	const bool bIsVirtualDevice = SDL_IsJoystickVirtual(InstanceId);
+	if (UIndependentInputManagerSettings::Get()->GetIgnoreVirtualDevices() && bIsVirtualDevice)
+	{
+		IgnoredDeviceIds.Add(DeviceId);
+		return false;
+	}
+
+	IgnoredDeviceIds.Remove(DeviceId);
+
 	FSDLJoystickDevice SDLDevice;
 	SDLDevice.bIsGamepad = SDL_IsGamepad(InstanceId);
 	
@@ -653,7 +664,7 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	SDLDevice.InstanceId = DeviceId;
 	FJoystickDeviceInfo DeviceInfo;
 	DeviceInfo.InstanceId = DeviceId;
-	DeviceInfo.bIsVirtualDevice = SDL_IsJoystickVirtual(InstanceId);;
+	DeviceInfo.bIsVirtualDevice = bIsVirtualDevice;
 
 	if (SDLDevice.bIsGamepad)
 	{
@@ -734,7 +745,9 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	UE_LOG(LogIndependentInput, Log, TEXT("\tBattery State: %s"), *UEnum::GetDisplayValueAsText(DeviceInfo.BatteryState).ToString());
 
 	UIndependentInputManagerSettings::GetMutable()->DevicePluggedIn(DeviceInfo);
-	IndependentInputDevice->DevicePluggedIn(DeviceInfo, SDLDevice);
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+		IndependentInputDevice->DevicePluggedIn(DeviceInfo, SDLDevice, *DeviceMapping);
+
 	OnDevicePluggedIn.Broadcast(DeviceInfo, SDLDevice);
 
 #if WITH_EDITORONLY_DATA
@@ -748,6 +761,9 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 void UIndependentInputSubsystem::UnregisterDevice(SDL_JoystickID InstanceId, bool bFadeOutLED)
 {
 	FInputDeviceInstanceId DeviceId(InstanceId);
+
+	if (IgnoredDeviceIds.Remove(DeviceId) > 0)
+		return;
 
 	const FSDLJoystickDevice* FoundSDLDevice = SDLDevices.Find(DeviceId);
 	if (!FoundSDLDevice)
@@ -802,29 +818,19 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable();
 	if (InputManagerSettings->HasDeviceKeyMapping(DeviceInfo.Identifier))
 	{
-		const FJoystickDeviceKeyMapping& DeviceMappings = *InputManagerSettings->FindDeviceKeyMappings(DeviceInfo.Identifier);
-		ConnectedDevicesMappings.Add(DeviceInfo.InstanceId, DeviceMappings);
+		FJoystickDeviceKeyMapping DeviceMapping = *InputManagerSettings->FindDeviceKeyMappings(DeviceInfo.Identifier);
+		ApplyInputOwnershipPolicy(DeviceInfo, DeviceMapping);
+
+		if (DeviceMapping.bUseIndependentInputAPI)
+			ConnectedDevicesMappings.Add(DeviceInfo.InstanceId, MoveTemp(DeviceMapping));
+
 		return;
 	}
 
-	if (InputManagerSettings->GetIgnoreXInputDevices())
-	{
-		if (DeviceInfo.Type == EJoystickDeviceType::Gamepad)
-		{
-			switch (DeviceInfo.GamepadType)
-			{
-				/*
-				* For XInput devices we do not want to create profile
-				* Let the XInputInterface handle the inputs.
-				*/
-				case EGamepadType::Xbox360:
-				case EGamepadType::XboxOne:
-					return;
-			}
-		}
-	}
-
 	FJoystickDeviceKeyMapping DeviceKeyMapping(DeviceInfo.MappingId, DeviceInfo.DeviceName);
+	ApplyInputOwnershipPolicy(DeviceInfo, DeviceKeyMapping);
+	if (!DeviceKeyMapping.bUseIndependentInputAPI)
+		return;
 	
 	
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::Accelerometer))
@@ -1043,8 +1049,6 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 
 			SDL_free(GamepadBindings);
 
-			CheckShouldUseInputAPI(DeviceInfo, DeviceKeyMapping);
-
 			// Add device key mapping for Gamepad device.
 			InputManagerSettings->AddOrUpdateDeviceKeyMapping(DeviceInfo.Identifier, DeviceKeyMapping);
 			ConnectedDevicesMappings.Add(DeviceInfo.InstanceId, DeviceKeyMapping);
@@ -1098,7 +1102,6 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 		DeviceKeyMapping.HatMappings.Add(i, HatMapping);
 	}
 
-	CheckShouldUseInputAPI(DeviceInfo, DeviceKeyMapping);
 	// Add device key mapping for joystick device.
 	InputManagerSettings->AddOrUpdateDeviceKeyMapping(DeviceInfo.Identifier, DeviceKeyMapping);
 
@@ -1107,43 +1110,23 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	UE_LOG(LogIndependentInput, Log, TEXT("Generated joystick device KeyMapping [%s] for [%s]"), *DeviceInfo.MappingId.ToString(), *DeviceInfo.DeviceName);
 }
 
-void UIndependentInputSubsystem::CheckShouldUseInputAPI(const FJoystickDeviceInfo& DeviceInfo, FJoystickDeviceKeyMapping& DeviceKeyMapping)
+void UIndependentInputSubsystem::ApplyInputOwnershipPolicy(const FJoystickDeviceInfo& DeviceInfo, FJoystickDeviceKeyMapping& DeviceKeyMapping)
 {
 	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
 
 #if PLATFORM_WINDOWS
-	if (DeviceInfo.Type == EJoystickDeviceType::Gamepad)
+	if (InputManagerSettings->GetIgnoreXInputDevices())
 	{
 		switch (DeviceInfo.GamepadType)
 		{
-			/*
-			* For windows, we don't want to handle Xbox controllers inputs through IndependentInputDevice
-			* Let the XInputInterface handle the inputs.
-			*/
 		case EGamepadType::Xbox360:
 		case EGamepadType::XboxOne:
-			DeviceKeyMapping.bUseIndependentInputAPI = !InputManagerSettings->GetIgnoreXInputDevices();
+			DeviceKeyMapping.bUseIndependentInputAPI = false;
 			break;
 
-		case EGamepadType::Unknown:
-		case EGamepadType::Standard:
-		case EGamepadType::PS3:
-		case EGamepadType::PS4:
-		case EGamepadType::PS5:
-		case EGamepadType::SwitchPro:
-		case EGamepadType::SwitchJoyconLeft:
-		case EGamepadType::SwitchJoyconRight:
-		case EGamepadType::SwitchJoyconPair:
-		case EGamepadType::GameCube:
-		case EGamepadType::Max:
 		default:
-			DeviceKeyMapping.bUseIndependentInputAPI = true;
 			break;
 		}
-	}
-	else
-	{
-		DeviceKeyMapping.bUseIndependentInputAPI = true;
 	}
 #else
 	// We do not support any other platforms yet.

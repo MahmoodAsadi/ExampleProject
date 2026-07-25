@@ -127,29 +127,19 @@ void FIndependentInputDevice::SetChannelValues(int ControllerId, const FForceFee
 	}
 }
 
-void FIndependentInputDevice::DevicePluggedIn(const FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice)
+void FIndependentInputDevice::DevicePluggedIn(const FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, const FJoystickDeviceKeyMapping& DeviceMapping)
 {
 	if (!DeviceInfo.IsValid())
 		return;
 
-	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
-
-	// Ignore virual devices.
-	if (InputManagerSettings->GetIgnoreVirtualDevices() && DeviceInfo.bIsVirtualDevice)
-		return;
-
-	const FJoystickDeviceKeyMapping* FoundMapping = InputManagerSettings->FindDeviceKeyMappings(DeviceInfo.Identifier);
-	if (!FoundMapping)
-		return;
-
-	if (!FoundMapping->bUseIndependentInputAPI)
+	if (!DeviceMapping.bUseIndependentInputAPI)
 		return;
 
 	DeviceInfos.Add(DeviceInfo.InstanceId, DeviceInfo);
 	SDLDevices.Add(DeviceInfo.InstanceId, SDLDevice);
 
-	DeviceMappings.Add(DeviceInfo.InstanceId, *FoundMapping);
-	FJoystickDeviceState NewState = CreateDeviceState(DeviceInfo, *FoundMapping);
+	DeviceMappings.Add(DeviceInfo.InstanceId, DeviceMapping);
+	FJoystickDeviceState NewState = CreateDeviceState(DeviceInfo, DeviceMapping);
 
 #if PLATFORM_WINDOWS
 	if (SDLDevice.bIsDualSense)
@@ -168,7 +158,7 @@ void FIndependentInputDevice::DevicePluggedIn(const FJoystickDeviceInfo& DeviceI
 
 	DeviceStates.Add(DeviceInfo.InstanceId, NewState);
 
-	for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : FoundMapping->SensorMappings)
+	for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping.SensorMappings)
 	{
 		SDL_SetGamepadSensorEnabled(SDLDevice.Gamepad, FSDLInputUtils::ConvertSensorType(SensorMapping.Key), SensorMapping.Value.bEnabled);
 	}

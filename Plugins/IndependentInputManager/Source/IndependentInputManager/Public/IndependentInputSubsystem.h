@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Containers/Ticker.h"
-#include "IndependentInputManagerTypes.h"
+#include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
+
+#include "IndependentInputManagerTypes.h"
 #include "IndependentInputSubsystem.generated.h"
 
 class FIndependentInputDevice;
@@ -151,8 +152,9 @@ private:
 	TSharedPtr<FIndependentInputDevice> IndependentInputDevice;
 	FTSTicker::FDelegateHandle TickHandle;
 	TMap<FInputDeviceInstanceId, FJoystickDeviceInfo> ConnectedDevices;
-	TMap<FInputDeviceInstanceId, FSDLJoystickDevice> SDLDevices;
 	TMap<FInputDeviceInstanceId, FJoystickDeviceKeyMapping> ConnectedDevicesMappings;
+	TMap<FInputDeviceInstanceId, FSDLJoystickDevice> SDLDevices;
+	TSet<FInputDeviceInstanceId> IgnoredDeviceIds;
 	TArray<FName> RegisteredKeyCategories;
 
 	bool Tick(float DeltaTime);
@@ -166,6 +168,6 @@ private:
 	void UnregisterDevice(SDL_JoystickID InstanceId, bool bFadeOutLED = false);
 	void HandleBatteryUpdated(SDL_JoystickID InstanceId, EDeviceBatteryState InState, int32 InPercent);
 	void CreateKeyMappingIfMissing(FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, bool& bCreatedNewDeviceMapping);
-	void CheckShouldUseInputAPI(const FJoystickDeviceInfo& DeviceInfo, FJoystickDeviceKeyMapping& DeviceKeyMapping);
+	void ApplyInputOwnershipPolicy(const FJoystickDeviceInfo& DeviceInfo, FJoystickDeviceKeyMapping& DeviceKeyMapping);
 
 };

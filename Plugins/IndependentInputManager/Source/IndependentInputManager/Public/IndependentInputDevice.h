@@ -25,7 +25,7 @@ public:
 	virtual void SetChannelValues(int ControllerId, const FForceFeedbackValues& Values) override;
 	virtual bool IsGamepadAttached() const override { return DeviceInfos.Num() > 0; }
 
-	void DevicePluggedIn(const FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice);
+	void DevicePluggedIn(const FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, const FJoystickDeviceKeyMapping& DeviceMapping);
 	void DeviceUnplugged(const FJoystickDeviceInfo& DeviceInfo);
 	void HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 Button, const bool bPressed);
 	void HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 Axis, const float Value);
