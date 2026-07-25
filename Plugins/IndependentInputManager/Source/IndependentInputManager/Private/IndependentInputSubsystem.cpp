@@ -54,9 +54,6 @@ FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping
 	if (!Key.bCustomKey)
 		return Key.Key;
 
-	if (Key.GetKey().IsValid())
-		return Key.GetKey();
-
 	const FString& DeviceName = DeviceMapping.DeviceName;
 	const FString& MappingId = DeviceMapping.MappingId.ToString();
 

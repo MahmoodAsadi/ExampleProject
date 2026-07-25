@@ -590,7 +590,7 @@ public:
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Key, meta = (EditCondition = "bCustomKey", HideEditConditionToggle))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = Key, meta = (EditCondition = "bCustomKey", HideEditConditionToggle))
 	FKey RuntimeKey;
 
 public:
