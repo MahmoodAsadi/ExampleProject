@@ -57,8 +57,8 @@ private:
 	void UpdateVirtualButtons(FAxisState* AxisState);
 	void HandleButtonState(FButtonState& ButtonState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleAxisState(FAxisState& AxisState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
-	void HandleBallState(FBallState& BallState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleHatState(FHatState& HatState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
+	void HandleBallState(FBallState& BallState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleSensorState(TMap<EDeviceSensorType, FSensorState>& Sensors, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleForceFeedback(FForceFeedbackState& ForceFeedbackState, const FInputDeviceInstanceId& DeviceId);
