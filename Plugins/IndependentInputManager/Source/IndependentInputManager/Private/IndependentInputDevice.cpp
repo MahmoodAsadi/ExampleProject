@@ -654,6 +654,16 @@ void FIndependentInputDevice::HandleAxisState(FAxisState& AxisState, const FPlat
 		AxisState.Commit();
 }
 
+void FIndependentInputDevice::HandleHatState(FHatState& HatState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)
+{
+	HandleButtonState(HatState.Up, PlatformUser, DeviceId);
+	HandleButtonState(HatState.Down, PlatformUser, DeviceId);
+	HandleButtonState(HatState.Left, PlatformUser, DeviceId);
+	HandleButtonState(HatState.Right, PlatformUser, DeviceId);
+
+	HatState.Commit();
+}
+
 void FIndependentInputDevice::HandleBallState(FBallState& BallState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)
 {
 	const bool bHasPendingInput = BallState.HasPendingInput();
@@ -680,16 +690,6 @@ void FIndependentInputDevice::HandleBallState(FBallState& BallState, const FPlat
 	{
 		HandleButtonState(VirtualButton.ButtonState, PlatformUser, DeviceId);
 	}
-}
-
-void FIndependentInputDevice::HandleHatState(FHatState& HatState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)
-{
-	HandleButtonState(HatState.Up, PlatformUser, DeviceId);
-	HandleButtonState(HatState.Down, PlatformUser, DeviceId);
-	HandleButtonState(HatState.Left, PlatformUser, DeviceId);
-	HandleButtonState(HatState.Right, PlatformUser, DeviceId);
-
-	HatState.Commit();
 }
 
 void FIndependentInputDevice::HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)
