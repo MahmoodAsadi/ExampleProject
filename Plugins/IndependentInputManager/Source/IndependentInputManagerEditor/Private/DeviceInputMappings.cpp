@@ -44,7 +44,15 @@ namespace
 	{
 		OutDisplayName = KeyX.GetKeyDisplayName();
 
-		if (OutDisplayName.EndsWith(TEXT("X-Axis")))
+		if (OutDisplayName.EndsWith(TEXT("X Delta")))
+		{
+			if (!OutDisplayName.RemoveFromEnd(TEXT(" X Delta")))
+				OutDisplayName.RemoveFromEnd(TEXT("X Delta"));
+
+			OutDisplayName.Append(TEXT(" Delta 2D"));
+			OutKeyName = SanitizeName(OutDisplayName).ToString();
+		}
+		else if (OutDisplayName.EndsWith(TEXT("X-Axis")))
 		{
 			if (!OutDisplayName.RemoveFromEnd(TEXT(" X-Axis")))
 				OutDisplayName.RemoveFromEnd(TEXT("X-Axis"));
@@ -326,6 +334,81 @@ namespace
 				{
 					return false;
 				}
+			}
+		}
+
+		TArray<int32> BallIndices;
+		DeviceKeyMapping.BallMappings.GenerateKeyArray(BallIndices);
+		BallIndices.Sort();
+		for (const int32 BallIndex : BallIndices)
+		{
+			const FJoystickBallKeyMapping& BallMapping =
+				DeviceKeyMapping.BallMappings.FindChecked(BallIndex);
+			const FString BallSource = FString::Printf(TEXT("Ball %d"), BallIndex);
+			if (!AddInputKey(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					BallMapping.X.Key,
+					BallSource + TEXT(", X"),
+					ECustomKeyType::Axis1D,
+					KeyUses,
+					OutValidationError)
+				|| !AddInputKey(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					BallMapping.Y.Key,
+					BallSource + TEXT(", Y"),
+					ECustomKeyType::Axis1D,
+					KeyUses,
+					OutValidationError))
+			{
+				return false;
+			}
+
+			for (int32 VirtualButtonIndex = 0; VirtualButtonIndex < BallMapping.X.VirtualButtons.Num(); ++VirtualButtonIndex)
+			{
+				if (!AddInputKey(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					BallMapping.X.VirtualButtons[VirtualButtonIndex].Key,
+					FString::Printf(TEXT("Ball %d, X, Virtual Button %d"), BallIndex, VirtualButtonIndex),
+					ECustomKeyType::Button,
+					KeyUses,
+					OutValidationError))
+				{
+					return false;
+				}
+			}
+
+			for (int32 VirtualButtonIndex = 0; VirtualButtonIndex < BallMapping.Y.VirtualButtons.Num(); ++VirtualButtonIndex)
+			{
+				if (!AddInputKey(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					BallMapping.Y.VirtualButtons[VirtualButtonIndex].Key,
+					FString::Printf(TEXT("Ball %d, Y, Virtual Button %d"), BallIndex, VirtualButtonIndex),
+					ECustomKeyType::Button,
+					KeyUses,
+					OutValidationError))
+				{
+					return false;
+				}
+			}
+
+			FString PairedKeyName;
+			FString PairedKeyDisplayName;
+			GetPairedKeyNames(BallMapping.X.Key, PairedKeyName, PairedKeyDisplayName);
+			if (!AddDerivedKey(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					PairedKeyName,
+					PairedKeyDisplayName,
+					BallSource + TEXT(", Delta 2D"),
+					ECustomKeyType::Axis2D,
+					KeyUses,
+					OutValidationError))
+			{
+				return false;
 			}
 		}
 
