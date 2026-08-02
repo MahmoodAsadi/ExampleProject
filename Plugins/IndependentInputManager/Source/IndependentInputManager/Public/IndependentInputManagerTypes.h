@@ -760,9 +760,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Relative Axis")
 	float Scale = 1.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Relative Axis")
-	TArray<FAxisVirtualButtonKeyMapping> VirtualButtons;
 };
 
 
@@ -1172,11 +1169,6 @@ struct INDEPENDENTINPUTMANAGER_API FRelativeAxisState
 		: Key(InMapping.Key.GetKey())
 		, Scale(InMapping.Scale)
 	{
-		VirtualButtons.Reserve(InMapping.VirtualButtons.Num());
-		for (const FAxisVirtualButtonKeyMapping& VirtualButtonMapping : InMapping.VirtualButtons)
-		{
-			VirtualButtons.Emplace(VirtualButtonMapping);
-		}
 	}
 
 	void Accumulate(float InRawDelta)
@@ -1194,11 +1186,6 @@ struct INDEPENDENTINPUTMANAGER_API FRelativeAxisState
 		OutputValue = PendingRawDelta * Scale;
 		PendingRawDelta = 0.0f;
 
-		for (FAxisVirtualButtonState& VirtualButton : VirtualButtons)
-		{
-			VirtualButton.ButtonState.Update(VirtualButton.EvalutateIsPressed(OutputValue));
-		}
-
 		return OutputValue;
 	}
 
@@ -1208,49 +1195,12 @@ struct INDEPENDENTINPUTMANAGER_API FRelativeAxisState
 	}
 
 	FKey Key;
-	TArray<FAxisVirtualButtonState> VirtualButtons;
 
 private:
 
 	float PendingRawDelta = 0.0f;
 	float OutputValue = 0.0f;
 	float Scale = 1.0f;
-};
-
-
-struct INDEPENDENTINPUTMANAGER_API FBallState
-{
-	FBallState() {}
-
-	FBallState(const FJoystickBallKeyMapping& InMapping)
-		: X(InMapping.X)
-		, Y(InMapping.Y)
-	{
-	}
-
-	void Accumulate(float XRel, float YRel)
-	{
-		X.Accumulate(XRel);
-		Y.Accumulate(YRel);
-	}
-
-	bool HasPendingInput() const
-	{
-		return X.HasPendingInput() || Y.HasPendingInput();
-	}
-
-	FVector2D ConsumeOutputValue()
-	{
-		return FVector2D(X.ConsumeOutputValue(), Y.ConsumeOutputValue());
-	}
-
-	FVector2D GetOutputValue() const
-	{
-		return FVector2D(X.GetOutputValue(), Y.GetOutputValue());
-	}
-
-	FRelativeAxisState X;
-	FRelativeAxisState Y;
 };
 
 
@@ -1300,6 +1250,42 @@ private:
 		Right.Update((InValue & SDL_HAT_RIGHT) != 0);
 	}
 
+};
+
+
+struct INDEPENDENTINPUTMANAGER_API FBallState
+{
+	FBallState() {}
+
+	FBallState(const FJoystickBallKeyMapping& InMapping)
+		: X(InMapping.X)
+		, Y(InMapping.Y)
+	{
+	}
+
+	void Accumulate(float XRel, float YRel)
+	{
+		X.Accumulate(XRel);
+		Y.Accumulate(YRel);
+	}
+
+	bool HasPendingInput() const
+	{
+		return X.HasPendingInput() || Y.HasPendingInput();
+	}
+
+	FVector2D ConsumeOutputValue()
+	{
+		return FVector2D(X.ConsumeOutputValue(), Y.ConsumeOutputValue());
+	}
+
+	FVector2D GetOutputValue() const
+	{
+		return FVector2D(X.GetOutputValue(), Y.GetOutputValue());
+	}
+
+	FRelativeAxisState X;
+	FRelativeAxisState Y;
 };
 
 

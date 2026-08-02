@@ -680,16 +680,6 @@ void FIndependentInputDevice::HandleBallState(FBallState& BallState, const FPlat
 			MessageHandler->OnControllerAnalog(BallState.Y.Key.GetFName(), PlatformUser, DeviceId, OutputValue.Y);
 		}
 	}
-
-	for (FAxisVirtualButtonState& VirtualButton : BallState.X.VirtualButtons)
-	{
-		HandleButtonState(VirtualButton.ButtonState, PlatformUser, DeviceId);
-	}
-
-	for (FAxisVirtualButtonState& VirtualButton : BallState.Y.VirtualButtons)
-	{
-		HandleButtonState(VirtualButton.ButtonState, PlatformUser, DeviceId);
-	}
 }
 
 void FIndependentInputDevice::HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)

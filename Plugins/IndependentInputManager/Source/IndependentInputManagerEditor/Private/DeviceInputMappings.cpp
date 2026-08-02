@@ -365,36 +365,6 @@ namespace
 				return false;
 			}
 
-			for (int32 VirtualButtonIndex = 0; VirtualButtonIndex < BallMapping.X.VirtualButtons.Num(); ++VirtualButtonIndex)
-			{
-				if (!AddInputKey(
-					DeviceIdentifier,
-					DeviceKeyMapping,
-					BallMapping.X.VirtualButtons[VirtualButtonIndex].Key,
-					FString::Printf(TEXT("Ball %d, X, Virtual Button %d"), BallIndex, VirtualButtonIndex),
-					ECustomKeyType::Button,
-					KeyUses,
-					OutValidationError))
-				{
-					return false;
-				}
-			}
-
-			for (int32 VirtualButtonIndex = 0; VirtualButtonIndex < BallMapping.Y.VirtualButtons.Num(); ++VirtualButtonIndex)
-			{
-				if (!AddInputKey(
-					DeviceIdentifier,
-					DeviceKeyMapping,
-					BallMapping.Y.VirtualButtons[VirtualButtonIndex].Key,
-					FString::Printf(TEXT("Ball %d, Y, Virtual Button %d"), BallIndex, VirtualButtonIndex),
-					ECustomKeyType::Button,
-					KeyUses,
-					OutValidationError))
-				{
-					return false;
-				}
-			}
-
 			FString PairedKeyName;
 			FString PairedKeyDisplayName;
 			GetPairedKeyNames(BallMapping.X.Key, PairedKeyName, PairedKeyDisplayName);
