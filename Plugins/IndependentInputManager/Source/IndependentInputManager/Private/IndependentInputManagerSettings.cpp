@@ -139,6 +139,22 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 		BallMapping.Value.X.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
 		BallMapping.Value.Y.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
 
+		for (FAxisVirtualButtonKeyMapping& VirtualButtonMapping : BallMapping.Value.X.VirtualButtons)
+		{
+			if (VirtualButtonMapping.Key.bCustomKey)
+				VirtualButtonMapping.Key.bIsAxisKey = false;
+
+			VirtualButtonMapping.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
+		}
+
+		for (FAxisVirtualButtonKeyMapping& VirtualButtonMapping : BallMapping.Value.Y.VirtualButtons)
+		{
+			if (VirtualButtonMapping.Key.bCustomKey)
+				VirtualButtonMapping.Key.bIsAxisKey = false;
+
+			VirtualButtonMapping.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
+		}
+
 		if (InputSubsystem)
 			InputSubsystem->CreateDevicePairedKey(DeviceKeyMapping, BallMapping.Value.X.Key, BallMapping.Value.Y.Key, true);
 	}
