@@ -517,11 +517,6 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickD
 		State.Axes.Add(AxisKeyMapping.Key, MoveTemp(AxisState));
 	}
 
-	for (const TPair<int32, FJoystickBallKeyMapping>& BallKeyMapping : InKeyMapping.BallMappings)
-	{
-		State.Balls.Add(BallKeyMapping.Key, FBallState(BallKeyMapping.Value));
-	}
-
 	for (const TPair<int32, FJoystickHatKeyMapping>& HatKeyMapping : InKeyMapping.HatMappings)
 	{
 		const FJoystickHatKeyMapping& Mapping = HatKeyMapping.Value;
@@ -533,6 +528,11 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickD
 		HatState.Right = FButtonState(Mapping.Right.GetKey());
 
 		State.Hats.Add(HatKeyMapping.Key, MoveTemp(HatState));
+	}
+
+	for (const TPair<int32, FJoystickBallKeyMapping>& BallKeyMapping : InKeyMapping.BallMappings)
+	{
+		State.Balls.Add(BallKeyMapping.Key, FBallState(BallKeyMapping.Value));
 	}
 
 	for (const TPair<int32, FJoystickTouchpadKeyMapping>& TouchpadPair : InKeyMapping.TouchpadMappings)
