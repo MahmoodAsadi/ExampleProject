@@ -868,6 +868,21 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::RightGyroscope, false));
 	}
 
+	for (int32 BallIndex = 0; BallIndex < DeviceInfo.NumberOfBalls; ++BallIndex)
+	{
+		FJoystickBallKeyMapping BallMapping;
+		BallMapping.BallIndex = BallIndex;
+
+		const FString KeyPrefix = FString::Printf(
+			TEXT("%s: Ball %d"),
+			*DeviceInfo.ShortDeviceName,
+			BallIndex + 1);
+
+		BallMapping.X.Key = FIndependentInputKey(KeyPrefix + TEXT(" X Delta"), DeviceInfo.MappingId.ToString(), true);
+		BallMapping.Y.Key = FIndependentInputKey(KeyPrefix + TEXT(" Y Delta"), DeviceInfo.MappingId.ToString(), true);
+		DeviceKeyMapping.BallMappings.Add(BallIndex, MoveTemp(BallMapping));
+	}
+
 	/*--------------------------------------------------------------------------
 	*
 	* Generate a default key mapping using SDL's Gamepad API.
