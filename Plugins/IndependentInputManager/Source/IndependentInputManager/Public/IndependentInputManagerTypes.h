@@ -749,6 +749,42 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickAxisKeyMapping
 
 
 USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMANAGER_API FRelativeAxisKeyMapping
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Relative Axis")
+	FIndependentInputKey Key;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Relative Axis")
+	float Scale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Relative Axis")
+	TArray<FAxisVirtualButtonKeyMapping> VirtualButtons;
+};
+
+
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMANAGER_API FJoystickBallKeyMapping
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball)
+	int32 BallIndex = INDEX_NONE;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
+	FRelativeAxisKeyMapping X;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
+	FRelativeAxisKeyMapping Y;
+};
+
+
+USTRUCT(BlueprintType)
 struct INDEPENDENTINPUTMANAGER_API FJoystickHatKeyMapping
 {
 	GENERATED_BODY()
@@ -927,6 +963,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
 	TMap<int32, FJoystickAxisKeyMapping> AxisMappings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
+	TMap<int32, FJoystickBallKeyMapping> BallMappings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
 	TMap<int32, FJoystickHatKeyMapping> HatMappings;
@@ -1122,6 +1161,96 @@ private:
 
 		return ProcessedValue;
 	}
+};
+
+
+struct INDEPENDENTINPUTMANAGER_API FRelativeAxisState
+{
+	FRelativeAxisState() {}
+
+	FRelativeAxisState(const FRelativeAxisKeyMapping& InMapping)
+		: Key(InMapping.Key.GetKey())
+		, Scale(InMapping.Scale)
+	{
+		VirtualButtons.Reserve(InMapping.VirtualButtons.Num());
+		for (const FAxisVirtualButtonKeyMapping& VirtualButtonMapping : InMapping.VirtualButtons)
+		{
+			VirtualButtons.Emplace(VirtualButtonMapping);
+		}
+	}
+
+	void Accumulate(float InRawDelta)
+	{
+		PendingRawDelta += InRawDelta;
+	}
+
+	bool HasPendingInput() const
+	{
+		return !FMath::IsNearlyZero(PendingRawDelta);
+	}
+
+	float ConsumeOutputValue()
+	{
+		OutputValue = PendingRawDelta * Scale;
+		PendingRawDelta = 0.0f;
+
+		for (FAxisVirtualButtonState& VirtualButton : VirtualButtons)
+		{
+			VirtualButton.ButtonState.Update(VirtualButton.EvalutateIsPressed(OutputValue));
+		}
+
+		return OutputValue;
+	}
+
+	float GetOutputValue() const
+	{
+		return OutputValue;
+	}
+
+	FKey Key;
+	TArray<FAxisVirtualButtonState> VirtualButtons;
+
+private:
+
+	float PendingRawDelta = 0.0f;
+	float OutputValue = 0.0f;
+	float Scale = 1.0f;
+};
+
+
+struct INDEPENDENTINPUTMANAGER_API FBallState
+{
+	FBallState() {}
+
+	FBallState(const FJoystickBallKeyMapping& InMapping)
+		: X(InMapping.X)
+		, Y(InMapping.Y)
+	{
+	}
+
+	void Accumulate(float XRel, float YRel)
+	{
+		X.Accumulate(XRel);
+		Y.Accumulate(YRel);
+	}
+
+	bool HasPendingInput() const
+	{
+		return X.HasPendingInput() || Y.HasPendingInput();
+	}
+
+	FVector2D ConsumeOutputValue()
+	{
+		return FVector2D(X.ConsumeOutputValue(), Y.ConsumeOutputValue());
+	}
+
+	FVector2D GetOutputValue() const
+	{
+		return FVector2D(X.GetOutputValue(), Y.GetOutputValue());
+	}
+
+	FRelativeAxisState X;
+	FRelativeAxisState Y;
 };
 
 
@@ -1387,6 +1516,7 @@ public:
 	TMap<int32, FButtonState> Buttons;
 	TMap<int32, FAxisState> Axes;
 	TMap<int32, FHatState> Hats;
+	TMap<int32, FBallState> Balls;
 	TMap<int32, FTouchpadState> Touchpads;
 	TMap<EDeviceSensorType, FSensorState> Sensors;
 	FForceFeedbackState ForceFeedback;
