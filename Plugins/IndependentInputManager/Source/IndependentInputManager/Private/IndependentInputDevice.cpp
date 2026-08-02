@@ -496,6 +496,7 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickD
 	DeviceMapper.Internal_MapInputDeviceToUser(State.InputDeviceId, State.PlatformUserId, EInputDeviceConnectionState::Connected);
 	State.Buttons.Reserve(InKeyMapping.ButtonMappings.Num());
 	State.Axes.Reserve(InKeyMapping.AxisMappings.Num());
+	State.Balls.Reserve(InKeyMapping.BallMappings.Num());
 	State.Hats.Reserve(InKeyMapping.HatMappings.Num());
 	State.Touchpads.Reserve(InKeyMapping.TouchpadMappings.Num());
 	
@@ -514,6 +515,11 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickD
 		}
 
 		State.Axes.Add(AxisKeyMapping.Key, MoveTemp(AxisState));
+	}
+
+	for (const TPair<int32, FJoystickBallKeyMapping>& BallKeyMapping : InKeyMapping.BallMappings)
+	{
+		State.Balls.Add(BallKeyMapping.Key, FBallState(BallKeyMapping.Value));
 	}
 
 	for (const TPair<int32, FJoystickHatKeyMapping>& HatKeyMapping : InKeyMapping.HatMappings)
