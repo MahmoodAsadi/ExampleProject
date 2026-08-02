@@ -449,11 +449,6 @@ void UIndependentInputSubsystem::PumpEvents()
 				break;
 			}
 
-			case SDL_EVENT_JOYSTICK_BALL_MOTION:
-			{
-				break;
-			}
-
 			case SDL_EVENT_JOYSTICK_HAT_MOTION:
 			{
 				const FInputDeviceInstanceId DeviceId(Event.jhat.which);
@@ -462,6 +457,23 @@ void UIndependentInputSubsystem::PumpEvents()
 				{
 					IndependentInputDevice->HandleHatEvent(DeviceId, Event.jhat.hat, Event.jhat.value);
 				}
+
+				break;
+			}
+
+			case SDL_EVENT_JOYSTICK_BALL_MOTION:
+			{
+				const FInputDeviceInstanceId DeviceId(Event.jball.which);
+				const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId);
+				if (DeviceMapping && IndependentInputDevice)
+				{
+					IndependentInputDevice->HandleBallEvent(
+						DeviceId,
+						Event.jball.ball,
+						Event.jball.xrel,
+						Event.jball.yrel);
+				}
+
 				break;
 			}
 

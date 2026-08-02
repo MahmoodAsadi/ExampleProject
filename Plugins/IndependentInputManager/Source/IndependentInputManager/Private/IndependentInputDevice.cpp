@@ -44,6 +44,12 @@ void FIndependentInputDevice::SendControllerEvents()
 			HandleAxisState(AxisState.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
 		}
 
+		// Handle Balls
+		for (TPair<int32, FBallState>& BallState : DeviceState.Balls)
+		{
+			HandleBallState(BallState.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
+		}
+
 		// Handle Hats
 		for (TPair<int32, FHatState>& HatPair : DeviceState.Hats)
 		{
@@ -218,6 +224,19 @@ void FIndependentInputDevice::HandleHatEvent(const FInputDeviceInstanceId& Devic
 		return;
 
 	HatState->Update(Value);
+}
+
+void FIndependentInputDevice::HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 Ball, const float XRel, const float YRel)
+{
+	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
+	if (!DeviceState)
+		return;
+
+	FBallState* BallState = DeviceState->Balls.Find(Ball);
+	if (!BallState)
+		return;
+
+	BallState->Accumulate(XRel, YRel);
 }
 
 void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 Touchpad, int32 Finger, bool bTouched, float X, float Y, float Pressure)
@@ -633,6 +652,34 @@ void FIndependentInputDevice::HandleAxisState(FAxisState& AxisState, const FPlat
 
 	if (bAxisChanged)
 		AxisState.Commit();
+}
+
+void FIndependentInputDevice::HandleBallState(FBallState& BallState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)
+{
+	const bool bHasPendingInput = BallState.HasPendingInput();
+	const FVector2D OutputValue = BallState.ConsumeOutputValue();
+	if (bHasPendingInput)
+	{
+		if (BallState.X.Key.IsValid())
+		{
+			MessageHandler->OnControllerAnalog(BallState.X.Key.GetFName(), PlatformUser, DeviceId, OutputValue.X);
+		}
+
+		if (BallState.Y.Key.IsValid())
+		{
+			MessageHandler->OnControllerAnalog(BallState.Y.Key.GetFName(), PlatformUser, DeviceId, OutputValue.Y);
+		}
+	}
+
+	for (FAxisVirtualButtonState& VirtualButton : BallState.X.VirtualButtons)
+	{
+		HandleButtonState(VirtualButton.ButtonState, PlatformUser, DeviceId);
+	}
+
+	for (FAxisVirtualButtonState& VirtualButton : BallState.Y.VirtualButtons)
+	{
+		HandleButtonState(VirtualButton.ButtonState, PlatformUser, DeviceId);
+	}
 }
 
 void FIndependentInputDevice::HandleHatState(FHatState& HatState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)

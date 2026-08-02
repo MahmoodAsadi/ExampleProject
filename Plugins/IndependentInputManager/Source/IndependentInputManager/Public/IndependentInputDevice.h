@@ -30,6 +30,7 @@ public:
 	void HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 Button, const bool bPressed);
 	void HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 Axis, const float Value);
 	void HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 Hat, const uint8 Value);
+	void HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 Ball, const float XRel, const float YRel);
 	void HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 Touchpad, int32 Finger, bool bTouched, float X, float Y, float Pressure);
 	void HandleSensorEvent(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType, const FVector& Value);
 	
@@ -56,6 +57,7 @@ private:
 	void UpdateVirtualButtons(FAxisState* AxisState);
 	void HandleButtonState(FButtonState& ButtonState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleAxisState(FAxisState& AxisState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
+	void HandleBallState(FBallState& BallState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleHatState(FHatState& HatState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleSensorState(TMap<EDeviceSensorType, FSensorState>& Sensors, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
