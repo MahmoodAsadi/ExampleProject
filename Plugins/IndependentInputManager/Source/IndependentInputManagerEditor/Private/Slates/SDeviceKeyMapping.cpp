@@ -549,7 +549,11 @@ void SDeviceKeyMapping::RefreshButtonsContainer()
 										Self->CloseInputMappingEditor();
 
 									UButtonInputMapping* ButtonMappingObject = NewObject<UButtonInputMapping>();
-									ButtonMappingObject->Key = ButtonMapping.Value.Key;
+									ButtonMappingObject->Initialize(
+										Self->SelectedDeviceIdentifier->DeviceIdentifier,
+										Self->DeviceKeyMapping,
+										ButtonMapping.Key,
+										ButtonMapping.Value);
 
 									Self->InputMappingEditor =
 										SNew(SWindow)
@@ -702,7 +706,11 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 										Self->CloseInputMappingEditor();
 
 									UAxisInputMapping* AxisMappingObject = NewObject<UAxisInputMapping>();
-									AxisMappingObject->AxisMapping = AxisMapping.Value;
+									AxisMappingObject->Initialize(
+										Self->SelectedDeviceIdentifier->DeviceIdentifier,
+										Self->DeviceKeyMapping,
+										AxisMapping.Key,
+										AxisMapping.Value);
 
 									Self->InputMappingEditor =
 										SNew(SWindow)
@@ -819,7 +827,11 @@ void SDeviceKeyMapping::RefreshHatContainer()
 								Self->CloseInputMappingEditor();
 
 							UHatInputMapping* HatMappingObject = NewObject<UHatInputMapping>();
-							HatMappingObject->HatMapping = HatMapping.Value;
+							HatMappingObject->Initialize(
+								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								Self->DeviceKeyMapping,
+								HatMapping.Key,
+								HatMapping.Value);
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
@@ -951,7 +963,11 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 										Self->CloseInputMappingEditor();
 
 									UTouchpadInputMapping* TouchpadMappingObject = NewObject<UTouchpadInputMapping>();
-									TouchpadMappingObject->TouchpadKeyMapping = TouchpadMapping.Value;
+									TouchpadMappingObject->Initialize(
+										Self->SelectedDeviceIdentifier->DeviceIdentifier,
+										Self->DeviceKeyMapping,
+										TouchpadMapping.Key,
+										TouchpadMapping.Value);
 
 									Self->InputMappingEditor =
 										SNew(SWindow)
@@ -1072,7 +1088,11 @@ void SDeviceKeyMapping::RefreshSensorContainer()
 										Self->CloseInputMappingEditor();
 
 									USensorInputMapping* SensorMappingObject = NewObject<USensorInputMapping>();
-									SensorMappingObject->SensorKeyMapping = SensorMapping.Value;
+									SensorMappingObject->Initialize(
+										Self->SelectedDeviceIdentifier->DeviceIdentifier,
+										Self->DeviceKeyMapping,
+										SensorMapping.Key,
+										SensorMapping.Value);
 
 									Self->InputMappingEditor =
 										SNew(SWindow)

@@ -3,6 +3,7 @@
 #include "Slates/SInputMappingEditor.h"
 
 #include "IDetailsView.h"
+#include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
 #include "Styling/AppStyle.h"
@@ -10,6 +11,8 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
+
+#include "DeviceInputMappings.h"
 
 #define LOCTEXT_NAMESPACE "SInputMappingEditor"
 
@@ -70,11 +73,26 @@ void SInputMappingEditor::Construct(const FArguments& InArgs)
 				[
 					SNew(SButton)
 					.Text(FText::FromString("Save"))
-						.OnClicked_Lambda([this]
+					.OnClicked_Lambda([this]
+						{
+							if (const UDeviceInputMappingBase* InputMapping =
+								Cast<UDeviceInputMappingBase>(ObjectToModify.Get()))
 							{
-								OnSave.Execute(ObjectToModify.Get());
-								return FReply::Handled();
-							})
+								FText ValidationError;
+								if (!InputMapping->ValidateMapping(ValidationError))
+								{
+									FMessageDialog::Open(
+										EAppMsgCategory::Warning,
+										EAppMsgType::Ok,
+										ValidationError,
+										LOCTEXT("InvalidInputKeyTitle", "Invalid Input Key"));
+									return FReply::Handled();
+								}
+							}
+
+							OnSave.ExecuteIfBound(ObjectToModify.Get());
+							return FReply::Handled();
+						})
 				]
 
 				+ SHorizontalBox::Slot()

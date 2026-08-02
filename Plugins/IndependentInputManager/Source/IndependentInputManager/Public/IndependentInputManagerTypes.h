@@ -9,6 +9,7 @@
 #include "IndependentInputManagerTypes.generated.h"
 
 class FDualSenseWindows;
+class UTexture2D;
 
 inline FName SanitizeName(const FString& DisplayName)
 {
@@ -1393,6 +1394,58 @@ public:
 #if PLATFORM_WINDOWS
 	TSharedPtr<FDualSenseWindows> DualSense;
 #endif
+};
+
+
+USTRUCT(BlueprintType)
+struct FInputActionVisual
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")
+	TSoftObjectPtr<UTexture2D> ActionImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")
+	FText ActionKeyDisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")
+	bool ShowBorder = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")
+	bool bEnableButton = false;
+
+};
+
+
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMANAGER_API FInputActionInfo
+{
+	GENERATED_BODY()
+
+public:
+
+	FInputActionInfo()
+	{
+		DevicesIdentifierMap.Add(FName(TEXT("KBM")));
+		DevicesIdentifierMap.Add(FName(TEXT("XInputController")));
+		DevicesIdentifierMap.Add(FName(TEXT("MobileTouch")));
+		DevicesIdentifierMap.Add(FName(TEXT("Gamepad")));
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")
+	FText ActionLabel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info", meta = (ShowOnlyInnerProperties))
+	FInputActionVisual MouseAndKeyboardIcon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info", meta = (ShowOnlyInnerProperties))
+	FInputActionVisual DefaultGamepadIcon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info", meta = (ShowOnlyInnerProperties))
+	TMap<FName, FInputActionVisual> DevicesIdentifierMap;
+
 };
 
 

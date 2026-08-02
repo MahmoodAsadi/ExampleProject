@@ -3,21 +3,71 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "IndependentInputManagerTypes.h"
 #include "DeviceInputMappings.generated.h"
 
 /**
  * 
  */
+UCLASS(Abstract)
+class INDEPENDENTINPUTMANAGEREDITOR_API UDeviceInputMappingBase : public UObject
+{
+	GENERATED_BODY()
+
+public:
+
+	void InitializeValidationContext(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping);
+	bool ValidateMapping(FText& OutValidationError) const;
+
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const PURE_VIRTUAL(
+		UDeviceInputMappingBase::ApplyEditedMapping);
+
+private:
+
+	UPROPERTY(Transient)
+	FJoystickDeviceIdentifier DeviceIdentifier;
+
+	UPROPERTY(Transient)
+	FJoystickDeviceKeyMapping DeviceKeyMappingSnapshot;
+
+	FText ValidationError;
+
+};
+
+
+/**
+ *
+ */
 UCLASS()
-class INDEPENDENTINPUTMANAGEREDITOR_API UButtonInputMapping : public UObject
+class INDEPENDENTINPUTMANAGEREDITOR_API UButtonInputMapping : public UDeviceInputMappingBase
 {
 	GENERATED_BODY()
 	
 public:
 
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		int32 InButtonIndex,
+		const FJoystickButtonKeyMapping& InButtonMapping);
+
 	UPROPERTY(EditAnywhere, Category = ButtonMapping, meta = (ShowOnlyInnerProperties))
 	FIndependentInputKey Key;
+
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	int32 ButtonIndex = INDEX_NONE;
 
 };
 
@@ -26,15 +76,29 @@ public:
  *
  */
 UCLASS()
-class INDEPENDENTINPUTMANAGEREDITOR_API UAxisInputMapping : public UObject
+class INDEPENDENTINPUTMANAGEREDITOR_API UAxisInputMapping : public UDeviceInputMappingBase
 {
 	GENERATED_BODY()
 
 public:
+
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		int32 InAxisIndex,
+		const FJoystickAxisKeyMapping& InAxisMapping);
 
 	UPROPERTY(EditAnywhere, Category = AxisMapping, meta = (ShowOnlyInnerProperties))
 	FJoystickAxisKeyMapping AxisMapping;
 
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	int32 AxisIndex = INDEX_NONE;
+
 };
 
 
@@ -42,15 +106,29 @@ public:
  *
  */
 UCLASS()
-class INDEPENDENTINPUTMANAGEREDITOR_API UHatInputMapping : public UObject
+class INDEPENDENTINPUTMANAGEREDITOR_API UHatInputMapping : public UDeviceInputMappingBase
 {
 	GENERATED_BODY()
 
 public:
+
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		int32 InHatIndex,
+		const FJoystickHatKeyMapping& InHatMapping);
 
 	UPROPERTY(EditAnywhere, Category = AxisMapping, meta = (ShowOnlyInnerProperties))
 	FJoystickHatKeyMapping HatMapping;
 
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	int32 HatIndex = INDEX_NONE;
+
 };
 
 
@@ -58,28 +136,57 @@ public:
  *
  */
 UCLASS()
-class INDEPENDENTINPUTMANAGEREDITOR_API UTouchpadInputMapping : public UObject
+class INDEPENDENTINPUTMANAGEREDITOR_API UTouchpadInputMapping : public UDeviceInputMappingBase
 {
 	GENERATED_BODY()
 
 public:
+
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		int32 InTouchpadIndex,
+		const FJoystickTouchpadKeyMapping& InTouchpadKeyMapping);
 
 	UPROPERTY(EditAnywhere, Category = TouchpadKeyMapping, meta = (ShowOnlyInnerProperties))
 	FJoystickTouchpadKeyMapping TouchpadKeyMapping;
 
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	int32 TouchpadIndex = INDEX_NONE;
+
 };
+
 
 /**
  *
  */
 UCLASS()
-class INDEPENDENTINPUTMANAGEREDITOR_API USensorInputMapping : public UObject
+class INDEPENDENTINPUTMANAGEREDITOR_API USensorInputMapping : public UDeviceInputMappingBase
 {
 	GENERATED_BODY()
 
 public:
 
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		EDeviceSensorType InSensorType,
+		const FJoystickSensorKeyMapping& InSensorKeyMapping);
+
 	UPROPERTY(EditAnywhere, Category = TouchpadKeyMapping, meta = (ShowOnlyInnerProperties))
 	FJoystickSensorKeyMapping SensorKeyMapping;
+
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	EDeviceSensorType SensorType = EDeviceSensorType::None;
 
 };

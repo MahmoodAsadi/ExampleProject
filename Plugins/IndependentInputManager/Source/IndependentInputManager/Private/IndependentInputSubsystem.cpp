@@ -571,6 +571,7 @@ void UIndependentInputSubsystem::CloseSDLDevice(FSDLJoystickDevice& SLDDevice, c
 		if (bFadeOutLED && bHasLED)
 			FadeOutJoystickLED(SLDDevice.Joystick);
 
+		SDL_RumbleJoystick(SLDDevice.Joystick, 0, 0, 0);
 		SDL_SetJoystickPlayerIndex(SLDDevice.Joystick, -1);
 	}
 
@@ -657,10 +658,19 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 		return false;
 	}
 
-	SDLDevice.bIsDualSense = FSDLInputUtils::IsDualSense(SDLDevice.Joystick);
-	SDLDevice.InstanceId = DeviceId;
 	FJoystickDeviceInfo DeviceInfo;
 	DeviceInfo.InstanceId = DeviceId;
+	DeviceInfo.Identifier.VendorId = SDL_GetJoystickVendor(SDLDevice.Joystick);
+	DeviceInfo.Identifier.ProductId = SDL_GetJoystickProduct(SDLDevice.Joystick);
+
+	if (!DeviceInfo.Identifier.IsValid())
+	{
+		CloseSDLDevice(SDLDevice, DeviceInfo, false);
+		return false;
+	}
+
+	SDLDevice.bIsDualSense = FSDLInputUtils::IsDualSense(SDLDevice.Joystick);
+	SDLDevice.InstanceId = DeviceId;
 	DeviceInfo.bIsVirtualDevice = bIsVirtualDevice;
 
 	if (SDLDevice.bIsGamepad)
@@ -687,8 +697,6 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 		DeviceInfo.ShortDeviceName = FSDLInputUtils::GetDeviceShortNameFromDeviceName(DeviceInfo.DeviceName);
 	}
 	
-	DeviceInfo.Identifier.VendorId = SDL_GetJoystickVendor(SDLDevice.Joystick);
-	DeviceInfo.Identifier.ProductId = SDL_GetJoystickProduct(SDLDevice.Joystick);
 	DeviceInfo.FirmwareVersion = SDL_GetJoystickFirmwareVersion(SDLDevice.Joystick);
 	DeviceInfo.ProductVersion = SDL_GetJoystickProductVersion(SDLDevice.Joystick);
 	DeviceInfo.UpdateProfileName();
