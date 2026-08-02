@@ -26,8 +26,8 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 	void InitializeInputDevice(const TSharedPtr<FIndependentInputDevice>& InputDevice);
-	FKey CreateDeviceKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& Key);
-	FKey CreateDevicePairedKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& KeyX, const FIndependentInputKey& KeyY);
+	FKey CreateDeviceKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& Key, bool bUpdateAxisWithoutSamples = false);
+	FKey CreateDevicePairedKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& KeyX, const FIndependentInputKey& KeyY, bool bUpdateAxisWithoutSamples = false);
 	FIndependentInputDevice* GetInputDevice() const;
 
 #if WITH_EDITORONLY_DATA

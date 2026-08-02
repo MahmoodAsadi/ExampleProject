@@ -49,7 +49,7 @@ void UIndependentInputSubsystem::InitializeInputDevice(const TSharedPtr<FIndepen
 	InitSDL();
 }
 
-FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& Key)
+FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& Key, bool bUpdateAxisWithoutSamples)
 {
 	if (!Key.bCustomKey)
 		return Key.Key;
@@ -72,6 +72,9 @@ FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping
 		uint32 KeyFlags = FKeyDetails::GamepadKey;
 		if (Key.bIsAxisKey)
 			KeyFlags |= FKeyDetails::Axis1D;
+
+		if (bUpdateAxisWithoutSamples)
+			KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
 		
 		FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(Key.GetKeyDisplayName()), KeyFlags, CategoryName);
 		EKeys::AddKey(NewKeyDetails);
@@ -80,14 +83,22 @@ FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping
 	return NewKey;
 }
 
-FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& KeyX, const FIndependentInputKey& KeyY)
+FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& KeyX, const FIndependentInputKey& KeyY, bool bUpdateAxisWithoutSamples)
 {
 	const FString& DeviceName = DeviceMapping.DeviceName;
 	const FString& MappingId = DeviceMapping.MappingId.ToString();
 	FString PairedKeyDisplayName = KeyX.GetKeyDisplayName();
 	FString PairedKeyName;
 	
-	if (PairedKeyDisplayName.EndsWith("X-Axis"))
+	if (PairedKeyDisplayName.EndsWith("X Delta"))
+	{
+		if (!PairedKeyDisplayName.RemoveFromEnd(" X Delta"))
+			PairedKeyDisplayName.RemoveFromEnd("X Delta");
+
+		PairedKeyDisplayName.Append(" Delta 2D");
+		PairedKeyName = FSDLInputUtils::SanitizeDisplayName(PairedKeyDisplayName).ToString();
+	}
+	else if (PairedKeyDisplayName.EndsWith("X-Axis"))
 	{
 		if (!PairedKeyDisplayName.RemoveFromEnd(" X-Axis"))
 			PairedKeyDisplayName.RemoveFromEnd("X-Axis");
@@ -123,6 +134,9 @@ FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyM
 	if (!ExistingKeyDetails)
 	{
 		uint32 KeyFlags = FKeyDetails::GamepadKey | FKeyDetails::Axis2D;
+		if (bUpdateAxisWithoutSamples)
+			KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
+
 		FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(PairedKeyDisplayName), KeyFlags, CategoryName);
 		EKeys::AddPairedKey(NewKeyDetails, KeyX.GetKey(), KeyY.GetKey());
 	}
@@ -1092,7 +1106,7 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	}
 
 	DeviceKeyMapping.bUseGamepadAPI = false;
-	UE_LOG(LogTemp, Warning, TEXT("Num buttons: %d"), DeviceInfo.NumberOfButtons);
+
 	for (int32 i = 0; i < DeviceInfo.NumberOfButtons; i++)
 	{
 		FJoystickButtonKeyMapping ButtonMapping;

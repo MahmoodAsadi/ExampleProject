@@ -596,7 +596,7 @@ protected:
 
 public:
 
-	void GenerateRuntimeKeyIfNeeded(const FJoystickDeviceKeyMapping& DeviceKeyMapping);
+	void GenerateRuntimeKeyIfNeeded(const FJoystickDeviceKeyMapping& DeviceKeyMapping, bool bUpdateAxisWithoutSamples = false);
 
 	FString GetKeyDisplayName() const
 	{

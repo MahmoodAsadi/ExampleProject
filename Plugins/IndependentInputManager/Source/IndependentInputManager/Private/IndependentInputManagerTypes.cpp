@@ -70,12 +70,12 @@ const FName FIndependentGamepadKeyNames::RightGyroscope_Y("Gamepad_RightGyroscop
 const FName FIndependentGamepadKeyNames::RightGyroscope_Z("Gamepad_RightGyroscope_Z");
 
 
-void FIndependentInputKey::GenerateRuntimeKeyIfNeeded(const FJoystickDeviceKeyMapping& DeviceKeyMapping)
+void FIndependentInputKey::GenerateRuntimeKeyIfNeeded(const FJoystickDeviceKeyMapping& DeviceKeyMapping, bool bUpdateAxisWithoutSamples)
 {
 	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
 	{
 		if (bCustomKey)
-			RuntimeKey = InputSubsystem->CreateDeviceKey(DeviceKeyMapping, *this);
+			RuntimeKey = InputSubsystem->CreateDeviceKey(DeviceKeyMapping, *this, bUpdateAxisWithoutSamples);
 	}
 }
 

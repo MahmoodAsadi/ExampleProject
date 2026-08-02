@@ -127,6 +127,22 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 		HatMapping.Value.Right.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 	}
 
+	// Register relative ball input keys.
+	for (TPair<int32, FJoystickBallKeyMapping>& BallMapping : DeviceKeyMapping.BallMappings)
+	{
+		if (BallMapping.Value.X.Key.bCustomKey)
+			BallMapping.Value.X.Key.bIsAxisKey = true;
+
+		if (BallMapping.Value.Y.Key.bCustomKey)
+			BallMapping.Value.Y.Key.bIsAxisKey = true;
+
+		BallMapping.Value.X.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
+		BallMapping.Value.Y.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
+
+		if (InputSubsystem)
+			InputSubsystem->CreateDevicePairedKey(DeviceKeyMapping, BallMapping.Value.X.Key, BallMapping.Value.Y.Key, true);
+	}
+
 	// Register touchpad input keys.
 	for (TPair<int32, FJoystickTouchpadKeyMapping>& TouchpadMapping : DeviceKeyMapping.TouchpadMappings)
 	{
@@ -172,6 +188,4 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 		SensorMapping.Value.Z.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 	}
 
-	// TODO:
-	// Register Ball keys when supported.
 }
