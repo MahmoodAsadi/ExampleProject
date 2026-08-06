@@ -690,9 +690,23 @@ void UDeviceInputMappingBase::InitializeValidationContext(
 
 bool UDeviceInputMappingBase::ValidateMapping(FText& OutValidationError) const
 {
-	FJoystickDeviceKeyMapping CandidateMapping = DeviceKeyMappingSnapshot;
-	ApplyEditedMapping(CandidateMapping);
-	return ValidateDeviceKeyMapping(DeviceIdentifier, CandidateMapping, OutValidationError);
+	FJoystickDeviceIdentifier EditedDeviceIdentifier;
+	FJoystickDeviceKeyMapping EditedDeviceKeyMapping;
+	return BuildValidatedDeviceKeyMapping(
+		EditedDeviceIdentifier,
+		EditedDeviceKeyMapping,
+		OutValidationError);
+}
+
+bool UDeviceInputMappingBase::BuildValidatedDeviceKeyMapping(
+	FJoystickDeviceIdentifier& OutDeviceIdentifier,
+	FJoystickDeviceKeyMapping& OutDeviceKeyMapping,
+	FText& OutValidationError) const
+{
+	OutDeviceIdentifier = DeviceIdentifier;
+	OutDeviceKeyMapping = DeviceKeyMappingSnapshot;
+	ApplyEditedMapping(OutDeviceKeyMapping);
+	return ValidateDeviceKeyMapping(OutDeviceIdentifier, OutDeviceKeyMapping, OutValidationError);
 }
 
 void UDeviceInputMappingBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

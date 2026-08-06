@@ -797,7 +797,7 @@ TSharedRef<SWidget> SConnectedDeviceInfo::CreateHardwareInformationSection()
 				.Padding(0.0f, 0.0f, 8.0f, 0.0f)
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("TouchpadLabel", "Touchpads:"))
+					.Text(LOCTEXT("TouchpadsLabel", "Touchpads:"))
 					.TextStyle(FAppStyle::Get(), "NormalText")
 					.ColorAndOpacity(FSlateColor::UseSubduedForeground())
 				]
@@ -941,7 +941,7 @@ void SConnectedDeviceInfo::RefreshTouchpads()
 				[
 					SNew(STextBlock)
 					.Text(FText::Format(
-						LOCTEXT("TouchpadLabel", "\tTouchpad {0} Supported Fingers:"),
+						LOCTEXT("TouchpadSupportedFingersFormat", "\tTouchpad {0} Supported Fingers:"),
 						FText::AsNumber(Index + 1)))
 					.TextStyle(FAppStyle::Get(), "NormalText")
 					.ColorAndOpacity(FSlateColor::UseSubduedForeground())

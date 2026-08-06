@@ -243,7 +243,7 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 
 								if (const FJoystickDeviceKeyMapping* KeyMapping = InputSettings->FindDeviceKeyMappings(InItem->DeviceIdentifier))
 								{
-									FText DeviceName = FText::Format(LOCTEXT("DeviceNameLabel", "{0}{1}"),
+									FText DeviceName = FText::Format(LOCTEXT("DeviceNameWithConnectionStatusFormat", "{0}{1}"),
 										FText::FromString(KeyMapping->DeviceName),
 										InItem->DeviceInstanceId.IsValid() ? LOCTEXT("DeviceLabel", ": Connected") : FText::GetEmpty());
 
@@ -292,7 +292,7 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 
 											if (InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(SelectedDeviceIdentifier->DeviceIdentifier))
 											{
-												DeviceName = FText::Format(LOCTEXT("DeviceNameLabel", "{0}{1}"),
+												DeviceName = FText::Format(LOCTEXT("DeviceNameWithConnectionStatusFormat", "{0}{1}"),
 													DeviceName, LOCTEXT("DeviceLabel", ": Connected"));
 											}
 
@@ -473,21 +473,34 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateDeviceKeyMappingSection()
 		];
 }
 
-void SDeviceKeyMapping::ApplyDeviceKeyMapping()
+void SDeviceKeyMapping::ApplyDeviceKeyMapping(const UDeviceInputMappingBase& InputMapping)
 {
-	if (!SelectedDeviceIdentifier.IsValid())
+	FJoystickDeviceIdentifier EditedDeviceIdentifier;
+	FJoystickDeviceKeyMapping EditedDeviceKeyMapping;
+	FText ValidationError;
+	if (!InputMapping.BuildValidatedDeviceKeyMapping(
+		EditedDeviceIdentifier,
+		EditedDeviceKeyMapping,
+		ValidationError))
+	{
+		return;
+	}
+
+	if (!EditedDeviceIdentifier.IsValid())
 		return;
 
-	if (!SelectedDeviceIdentifier->DeviceIdentifier.IsValid())
-		return;
+	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid()
+		? SelectedDeviceIdentifier->DeviceIdentifier
+		: EditedDeviceIdentifier;
 
 	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
 	{
-		InputManagerSettings->AddOrUpdateDeviceKeyMapping(SelectedDeviceIdentifier->DeviceIdentifier, DeviceKeyMapping);
-		RefreshDeviceKeyMappingContainer();
+		InputManagerSettings->AddOrUpdateDeviceKeyMapping(EditedDeviceIdentifier, EditedDeviceKeyMapping);
 
 		if (UIndependentInputSubsystem* Subsystem = UIndependentInputSubsystem::Get())
-			Subsystem->ReconnectDevice(SelectedDeviceIdentifier->DeviceIdentifier);
+			Subsystem->ReconnectDevice(EditedDeviceIdentifier);
+
+		UpdateList(PreferredSelection);
 	}
 }
 
@@ -583,17 +596,16 @@ void SDeviceKeyMapping::RefreshButtonsContainer()
 
 												return FReply::Handled();
 											})
-										.OnSave_Lambda([WeakDeviceMapping, ButtonMapping](const UObject* ModifiedObject)
+										.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 											{
 												const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 												if (!Self)
 													return;
 
-												if (const UButtonInputMapping* ModifiedMapping = Cast<UButtonInputMapping>(ModifiedObject))
-													Self->DeviceKeyMapping.ButtonMappings[ButtonMapping.Key].Key = ModifiedMapping->Key;
+												if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+													Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 												Self->CloseInputMappingEditor();
-												Self->ApplyDeviceKeyMapping();
 											})
 								];
 
@@ -740,17 +752,16 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 
 											return FReply::Handled();
 										})
-									.OnSave_Lambda([WeakDeviceMapping, AxisMapping](const UObject* ModifiedObject)
+									.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 										{
 											const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 											if (!Self)
 												return;
 
-											if (const UAxisInputMapping* ModifiedMapping = Cast<UAxisInputMapping>(ModifiedObject))
-												Self->DeviceKeyMapping.AxisMappings[AxisMapping.Key] = ModifiedMapping->AxisMapping;
+											if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+												Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 											Self->CloseInputMappingEditor();
-											Self->ApplyDeviceKeyMapping();
 										})
 								];
 
@@ -861,19 +872,16 @@ void SDeviceKeyMapping::RefreshHatsContainer()
 
 										return FReply::Handled();
 									})
-								.OnSave_Lambda([WeakDeviceMapping, HatMapping](const UObject* ModifiedObject)
+								.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 									{
 										const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 										if (!Self)
 											return;
 
-										if (const UHatInputMapping* ModifiedMapping = Cast<UHatInputMapping>(ModifiedObject))
-										{
-											Self->DeviceKeyMapping.HatMappings[HatMapping.Key] = ModifiedMapping->HatMapping;
-										}
+										if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+											Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 										Self->CloseInputMappingEditor();
-										Self->ApplyDeviceKeyMapping();
 									})
 							];
 
@@ -983,19 +991,16 @@ void SDeviceKeyMapping::RefreshBallsContainer()
 
 												return FReply::Handled();
 											})
-										.OnSave_Lambda([WeakDeviceMapping, BallMapping](const UObject* ModifiedObject)
+										.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 											{
 												const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 												if (!Self)
 													return;
 
-												if (const UBallInputMapping* ModifiedMapping = Cast<UBallInputMapping>(ModifiedObject))
-												{
-													Self->DeviceKeyMapping.BallMappings[BallMapping.Key] = ModifiedMapping->BallMapping;
-												}
+												if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+													Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 												Self->CloseInputMappingEditor();
-												Self->ApplyDeviceKeyMapping();
 											})
 								];
 
@@ -1119,17 +1124,16 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 
 											return FReply::Handled();
 										})
-									.OnSave_Lambda([WeakDeviceMapping, TouchpadMapping](const UObject* ModifiedObject)
+									.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 										{
 											const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 											if (!Self)
 												return;
 
-											if (const UTouchpadInputMapping* ModifiedMapping = Cast<UTouchpadInputMapping>(ModifiedObject))
-												Self->DeviceKeyMapping.TouchpadMappings[TouchpadMapping.Key] = ModifiedMapping->TouchpadKeyMapping;
+											if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+												Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 											Self->CloseInputMappingEditor();
-											Self->ApplyDeviceKeyMapping();
 										})
 								];
 
@@ -1145,7 +1149,7 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 		.Padding(0.0f, 0.0f, 0.0f, 8.0f)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("AxisSectionTitle", "Touchpads"))
+			.Text(LOCTEXT("TouchpadsSectionTitle", "Touchpads"))
 			.TextStyle(FAppStyle::Get(), "DetailsView.CategoryTextStyle")
 			.Font(FAppStyle::GetFontStyle("PropertyWindow.BoldFont"))
 		];
@@ -1244,17 +1248,16 @@ void SDeviceKeyMapping::RefreshSensorContainer()
 											
 											return FReply::Handled();
 										})
-									.OnSave_Lambda([WeakDeviceMapping, SensorMapping](const UObject* ModifiedObject)
+									.OnSave_Lambda([WeakDeviceMapping](const UObject* ModifiedObject)
 										{
 											const TSharedPtr<SDeviceKeyMapping> Self = WeakDeviceMapping.Pin();
 											if (!Self)
 												return;
 
-											if (const USensorInputMapping* ModifiedMapping = Cast<USensorInputMapping>(ModifiedObject))
-												Self->DeviceKeyMapping.SensorMappings[SensorMapping.Key] = ModifiedMapping->SensorKeyMapping;
+											if (const UDeviceInputMappingBase* ModifiedMapping = Cast<UDeviceInputMappingBase>(ModifiedObject))
+												Self->ApplyDeviceKeyMapping(*ModifiedMapping);
 
 											Self->CloseInputMappingEditor();
-											Self->ApplyDeviceKeyMapping();
 										})
 								];
 

@@ -13,6 +13,7 @@ template <typename OptionType>
 class SComboBox;
 class SVerticalBox;
 class SWindow;
+class UDeviceInputMappingBase;
 
 USTRUCT()
 struct FKeyMappingDeviceIdentifier
@@ -78,7 +79,7 @@ private:
 	TSharedRef<SWidget> CreateProfileSelectionSection();
 	TSharedRef<SWidget> CreateProfileInfoSection();
 	TSharedRef<SWidget> CreateDeviceKeyMappingSection();
-	void ApplyDeviceKeyMapping();
+	void ApplyDeviceKeyMapping(const UDeviceInputMappingBase& InputMapping);
 	void RefreshDeviceKeyMappingContainer();
 	void RefreshButtonsContainer();
 	void RefreshAxisContainer();

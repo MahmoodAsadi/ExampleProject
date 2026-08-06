@@ -20,6 +20,10 @@ public:
 	void InitializeValidationContext(
 		const FJoystickDeviceIdentifier& InDeviceIdentifier,
 		const FJoystickDeviceKeyMapping& InDeviceKeyMapping);
+	bool BuildValidatedDeviceKeyMapping(
+		FJoystickDeviceIdentifier& OutDeviceIdentifier,
+		FJoystickDeviceKeyMapping& OutDeviceKeyMapping,
+		FText& OutValidationError) const;
 	bool ValidateMapping(FText& OutValidationError) const;
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
