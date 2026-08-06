@@ -86,6 +86,28 @@ namespace
 		return FKey(FName(*(DeviceKeyMapping.MappingId.ToString() + Key.GetKeyName().ToString())));
 	}
 
+	bool ValidateRelativeBallKey(
+		const FJoystickDeviceIdentifier& DeviceIdentifier,
+		const FKey& RuntimeKey,
+		const FString& Source,
+		FText& OutValidationError)
+	{
+		const TSharedPtr<FKeyDetails> KeyDetails = EKeys::GetKeyDetails(RuntimeKey);
+		if (!KeyDetails || KeyDetails->ShouldUpdateAxisWithoutSamples())
+			return true;
+
+		OutValidationError = FText::Format(
+			LOCTEXT(
+				"BallKeyDoesNotResetWithoutSamples",
+				"{0}: {1} uses key \"{2}\", which retains its previous axis value when no input sample is received. "
+				"Ball input requires a relative-axis key registered with UpdateAxisWithoutSamples. Choose a compatible "
+				"relative-axis key or create a new custom key."),
+			FText::FromString(DeviceIdentifier.ToString()),
+			FText::FromString(Source),
+			FText::FromName(RuntimeKey.GetFName()));
+		return false;
+	}
+
 	bool ValidatePairedKeyRegistration(
 		const FJoystickDeviceIdentifier& DeviceIdentifier,
 		const FJoystickDeviceKeyMapping& DeviceKeyMapping,
@@ -439,6 +461,11 @@ namespace
 					ECustomKeyType::Axis1D,
 					KeyUses,
 					OutValidationError)
+				|| !ValidateRelativeBallKey(
+					DeviceIdentifier,
+					GetMappedRuntimeKey(DeviceKeyMapping, BallMapping.X.Key),
+					BallSource + TEXT(", X"),
+					OutValidationError)
 				|| !AddInputKey(
 					DeviceIdentifier,
 					DeviceKeyMapping,
@@ -446,6 +473,11 @@ namespace
 					BallSource + TEXT(", Y"),
 					ECustomKeyType::Axis1D,
 					KeyUses,
+					OutValidationError)
+				|| !ValidateRelativeBallKey(
+					DeviceIdentifier,
+					GetMappedRuntimeKey(DeviceKeyMapping, BallMapping.Y.Key),
+					BallSource + TEXT(", Y"),
 					OutValidationError))
 			{
 				return false;
@@ -469,6 +501,11 @@ namespace
 					BallMapping.X.Key,
 					BallMapping.Y.Key,
 					PairedKeyName,
+					BallSource + TEXT(", Delta 2D"),
+					OutValidationError)
+				|| !ValidateRelativeBallKey(
+					DeviceIdentifier,
+					FKey(FName(*(DeviceKeyMapping.MappingId.ToString() + PairedKeyName))),
 					BallSource + TEXT(", Delta 2D"),
 					OutValidationError))
 			{
