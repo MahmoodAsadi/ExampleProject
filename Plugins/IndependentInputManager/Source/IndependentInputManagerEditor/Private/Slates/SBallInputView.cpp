@@ -40,12 +40,13 @@ void SBallInputView::Construct(const FArguments& InArgs)
 				if (GEditor && GEditor->GetWorld())
 					DeltaSec = GEditor->GetWorld()->GetDeltaSeconds();
 
+				const FVector2D CurrentBallState = BallState.Get();
 				FVector2D NewValue = FVector2D(
-					FMath::GetMappedRangeValueClamped(FVector2D(-10.0f, 10.0f), FVector2D(0.0f, 1.0f), BallState.Get().X),
-					FMath::GetMappedRangeValueClamped(FVector2D(-10.0f, 10.0f), FVector2D(0.0f, 1.0f), BallState.Get().Y));
+					FMath::GetMappedRangeValueClamped(FVector2D(-10.0f, 10.0f), FVector2D(0.0f, 1.0f), CurrentBallState.X),
+					FMath::GetMappedRangeValueClamped(FVector2D(-10.0f, 10.0f), FVector2D(0.0f, 1.0f), CurrentBallState.Y));
 
-				const bool bReturningToCenter = NewValue.IsNearlyZero();
-				const float InterpSpeed = bReturningToCenter ? 1.0f : 10.0f;
+				const bool bReturningToCenter = (NewValue - FVector2D(0.5f, 0.5f)).IsNearlyZero();
+				const float InterpSpeed = bReturningToCenter ? 8.0f : 20.0f;
 
 				InterpValue = FMath::Vector2DInterpTo(InterpValue, NewValue, DeltaSec, InterpSpeed);
 				return FAnchors(InterpValue.X, InterpValue.Y);

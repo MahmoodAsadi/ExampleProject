@@ -183,9 +183,7 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 	if (SelectedDeviceIdentifier.IsValid())
 	{
 		if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(SelectedDeviceIdentifier->DeviceIdentifier))
-		{
 			DeviceKeyMapping = *FoundMapping;
-		}
 	}
 
 	RefreshOptions();
@@ -267,9 +265,7 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 									if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
 									{
 										if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(SelectedDeviceIdentifier->DeviceIdentifier))
-										{
 											DeviceKeyMapping = *FoundMapping;
-										}
 									}
 								}
 

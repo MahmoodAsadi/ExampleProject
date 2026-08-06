@@ -32,7 +32,6 @@ private:
 	FJoystickBallKeyMapping BallMapping;
 	TAttribute<FVector2D> BallState;
 	FOnClicked OnClicked;
-	FVector2D InterpValue;
-	FSlateBrush SlateBrush;
+	FVector2D InterpValue = FVector2D(0.5f, 0.5f);
 
 };
