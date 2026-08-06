@@ -613,6 +613,22 @@ void UHatInputMapping::ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDevice
 	InOutDeviceKeyMapping.HatMappings.Add(HatIndex, HatMapping);
 }
 
+void UBallInputMapping::Initialize(
+	const FJoystickDeviceIdentifier& InDeviceIdentifier, 
+	const FJoystickDeviceKeyMapping& InDeviceKeyMapping, 
+	int32 InBallIndex, 
+	const FJoystickBallKeyMapping& InBallMapping)
+{
+	BallIndex = InBallIndex;
+	BallMapping = InBallMapping;
+	InitializeValidationContext(InDeviceIdentifier, InDeviceKeyMapping);
+}
+
+void UBallInputMapping::ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const
+{
+	InOutDeviceKeyMapping.BallMappings.Add(BallIndex, BallMapping);
+}
+
 void UTouchpadInputMapping::Initialize(
 	const FJoystickDeviceIdentifier& InDeviceIdentifier,
 	const FJoystickDeviceKeyMapping& InDeviceKeyMapping,

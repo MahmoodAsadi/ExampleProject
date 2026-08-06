@@ -47,6 +47,7 @@ public:
 	float GetAxisRawState(const FInputDeviceInstanceId& DeviceId, const int32 Axis) const;
 	bool GetAxisVirtualButtonState(const FInputDeviceInstanceId& DeviceId, const int32 Axis, const int32 VirtualButton) const;
 	uint8 GetHatState(const FInputDeviceInstanceId& DeviceId, const int32 Hat) const;
+	FVector2D GetBallState(const FInputDeviceInstanceId& DeviceId, const int32 Ball) const;
 	FTouchFingerState GetTouchpadFingerState(const FInputDeviceInstanceId& DeviceId, const int32 TouchpadIndex, const int32 FingerIndex) const;
 	FSensorState GetSensorState(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType) const;
 

@@ -438,6 +438,17 @@ uint8 FIndependentInputDevice::GetHatState(const FInputDeviceInstanceId& DeviceI
 	return DeviceStates[DeviceId].Hats[Hat].Value;
 }
 
+FVector2D FIndependentInputDevice::GetBallState(const FInputDeviceInstanceId& DeviceId, const int32 Ball) const
+{
+	if (!DeviceStates.Contains(DeviceId))
+		return FVector2D::ZeroVector;
+
+	if (!DeviceStates[DeviceId].Balls.Contains(Ball))
+		return FVector2D::ZeroVector;
+
+	return DeviceStates[DeviceId].Balls[Ball].GetOutputValue();
+}
+
 FTouchFingerState FIndependentInputDevice::GetTouchpadFingerState(const FInputDeviceInstanceId& DeviceId, const int32 TouchpadIndex, const int32 FingerIndex) const
 {
 	if (!DeviceStates.Contains(DeviceId))

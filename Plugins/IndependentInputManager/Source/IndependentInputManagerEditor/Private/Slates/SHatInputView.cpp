@@ -71,7 +71,7 @@ void SHatInputView::Construct(const FArguments& InArgs)
 						.Font(FAppStyle::GetFontStyle("NormalFontBold"))
 					]
 
-					// Touch surface
+					// Hat Surface
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					.Padding(10.0f)

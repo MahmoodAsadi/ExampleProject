@@ -82,7 +82,8 @@ private:
 	void RefreshDeviceKeyMappingContainer();
 	void RefreshButtonsContainer();
 	void RefreshAxisContainer();
-	void RefreshHatContainer();
+	void RefreshHatsContainer();
+	void RefreshBallsContainer();
 	void RefreshTouchpadContainer();
 	void RefreshSensorContainer();
 	void CloseInputMappingEditor();
@@ -96,6 +97,7 @@ private:
 	TSharedPtr<SVerticalBox> ButtonSectionContainer;
 	TSharedPtr<SVerticalBox> AxisSectionContainer;
 	TSharedPtr<SVerticalBox> HatSectionContainer;
+	TSharedPtr<SVerticalBox> BallSectionContainer;
 	TSharedPtr<SVerticalBox> TouchpadSectionContainer;
 	TSharedPtr<SVerticalBox> SensorSectionContainer;
 	TSharedPtr<SWindow> InputMappingEditor;

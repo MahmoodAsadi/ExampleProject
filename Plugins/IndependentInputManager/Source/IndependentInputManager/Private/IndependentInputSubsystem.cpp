@@ -384,11 +384,11 @@ void UIndependentInputSubsystem::InitSDL()
 		return;
 
 	const SDL_InitFlags InitFlags =
-		SDL_INIT_EVENTS |
-		SDL_INIT_JOYSTICK |
-		SDL_INIT_GAMEPAD |
-		SDL_INIT_HAPTIC |
-		SDL_INIT_SENSOR;
+		SDL_INIT_EVENTS
+		| SDL_INIT_JOYSTICK
+		| SDL_INIT_GAMEPAD
+		| SDL_INIT_HAPTIC
+		| SDL_INIT_SENSOR;
 
 	if (!SDL_Init(InitFlags))
 	{
@@ -458,6 +458,30 @@ void UIndependentInputSubsystem::PumpEvents()
 					IndependentInputDevice->HandleHatEvent(DeviceId, Event.jhat.hat, Event.jhat.value);
 				}
 
+				break;
+			}
+
+			case SDL_EVENT_MOUSE_MOTION:
+			{
+				UE_LOG(LogTemp, Error, TEXT("Mouse motion detected [%s]"), *(FVector2D(Event.motion.xrel, Event.motion.yrel)).ToString());
+				/*const FInputDeviceInstanceId DeviceId(Event.mmotion.which);
+				const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId);
+				if (DeviceMapping && !DeviceMapping->bUseGamepadAPI && IndependentInputDevice)
+				{
+					IndependentInputDevice->HandleMouseMotionEvent(DeviceId, Event.mmotion.xrel, Event.mmotion.yrel);
+				}*/
+				break;
+			}
+
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			{
+				UE_LOG(LogTemp, Error, TEXT("Mouse button down"));
+				/*const FInputDeviceInstanceId DeviceId(Event.mmotion.which);
+				const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId);
+				if (DeviceMapping && !DeviceMapping->bUseGamepadAPI && IndependentInputDevice)
+				{
+					IndependentInputDevice->HandleMouseMotionEvent(DeviceId, Event.mmotion.xrel, Event.mmotion.yrel);
+				}*/
 				break;
 			}
 

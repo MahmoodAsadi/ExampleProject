@@ -20,16 +20,19 @@ public:
 		}
 
 		SLATE_ARGUMENT(FJoystickBallKeyMapping, BallMapping)
-		SLATE_ARGUMENT(TAttribute<FBallState>, BallState)
+		SLATE_ARGUMENT(TAttribute<FVector2D>, BallState)
 		SLATE_EVENT(FOnClicked, OnClicked)
 
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 
+private:
 
-	FJoystickHatKeyMapping BallMapping;
-	TAttribute<FBallState> BallState;
+	FJoystickBallKeyMapping BallMapping;
+	TAttribute<FVector2D> BallState;
 	FOnClicked OnClicked;
+	FVector2D InterpValue;
+	FSlateBrush SlateBrush;
 
 };

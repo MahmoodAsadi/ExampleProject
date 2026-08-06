@@ -118,7 +118,7 @@ public:
 		int32 InHatIndex,
 		const FJoystickHatKeyMapping& InHatMapping);
 
-	UPROPERTY(EditAnywhere, Category = AxisMapping, meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditAnywhere, Category = HatMapping, meta = (ShowOnlyInnerProperties))
 	FJoystickHatKeyMapping HatMapping;
 
 protected:
@@ -128,6 +128,36 @@ protected:
 private:
 
 	int32 HatIndex = INDEX_NONE;
+
+};
+
+
+/**
+ *
+ */
+UCLASS()
+class INDEPENDENTINPUTMANAGEREDITOR_API UBallInputMapping : public UDeviceInputMappingBase
+{
+	GENERATED_BODY()
+
+public:
+
+	void Initialize(
+		const FJoystickDeviceIdentifier& InDeviceIdentifier,
+		const FJoystickDeviceKeyMapping& InDeviceKeyMapping,
+		int32 InBallIndex,
+		const FJoystickBallKeyMapping& InBallMapping);
+
+	UPROPERTY(EditAnywhere, Category = BallMapping, meta = (ShowOnlyInnerProperties))
+	FJoystickBallKeyMapping BallMapping;
+
+protected:
+
+	virtual void ApplyEditedMapping(FJoystickDeviceKeyMapping& InOutDeviceKeyMapping) const override;
+
+private:
+
+	int32 BallIndex = INDEX_NONE;
 
 };
 

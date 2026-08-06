@@ -764,24 +764,6 @@ public:
 
 
 USTRUCT(BlueprintType)
-struct INDEPENDENTINPUTMANAGER_API FJoystickBallKeyMapping
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball)
-	int32 BallIndex = INDEX_NONE;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
-	FRelativeAxisKeyMapping X;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
-	FRelativeAxisKeyMapping Y;
-};
-
-
-USTRUCT(BlueprintType)
 struct INDEPENDENTINPUTMANAGER_API FJoystickHatKeyMapping
 {
 	GENERATED_BODY()
@@ -800,6 +782,24 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickHatKeyMapping
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Hat)
 	FIndependentInputKey Right;
+};
+
+
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMANAGER_API FJoystickBallKeyMapping
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ball)
+	int32 BallIndex = INDEX_NONE;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
+	FRelativeAxisKeyMapping X;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Ball)
+	FRelativeAxisKeyMapping Y;
 };
 
 
