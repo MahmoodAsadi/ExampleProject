@@ -71,9 +71,6 @@ bool FDualSenseTriggerEffectGenerator::Weapon(uint8 Out[11], uint8 StartPosition
 	StartPosition = FMath::Clamp<uint8>(StartPosition, 2, 7);
 	EndPosition = FMath::Clamp<uint8>(EndPosition, StartPosition + 1, 8);
 
-	if (EndPosition <= StartPosition)
-		return false;
-
 	Strength = FMath::Clamp<uint8>(Strength, 0, 8);
 	if (Strength == 0)
 	{
@@ -132,11 +129,10 @@ bool FDualSenseTriggerEffectGenerator::Vibration(uint8 Out[11], uint8 Position, 
 
 bool FDualSenseTriggerEffectGenerator::Bow(uint8 Out[11], uint8 StartPosition, uint8 EndPosition, uint8 Strength, uint8 SnapForce)
 {
+	// The reference permits StartPosition 0-8, but EndPosition must be greater and
+	// cannot exceed 8. Seven is therefore the highest effective starting zone.
 	StartPosition = FMath::Clamp<uint8>(StartPosition, 0, 7);
 	EndPosition = FMath::Clamp<uint8>(EndPosition, StartPosition + 1, 8);
-
-	if (StartPosition >= EndPosition)
-		return false;
 
 	Strength = FMath::Clamp<uint8>(Strength, 0, 8);
 	SnapForce = FMath::Clamp<uint8>(SnapForce, 0, 8);
@@ -167,14 +163,8 @@ bool FDualSenseTriggerEffectGenerator::Galloping(uint8 Out[11], uint8 StartPosit
 	StartPosition = FMath::Clamp<uint8>(StartPosition, 0, 8);
 	EndPosition = FMath::Clamp<uint8>(EndPosition, StartPosition + 1, 9);
 
-	if (StartPosition >= EndPosition)
-		return false;
-
 	FirstFoot = FMath::Clamp<uint8>(FirstFoot, 0, 6);
 	SecondFoot = FMath::Clamp<uint8>(SecondFoot, FirstFoot + 1, 7);
-
-	if (FirstFoot >= SecondFoot)
-		return false;
 
 	if (Frequency == 0)
 	{
@@ -203,9 +193,6 @@ bool FDualSenseTriggerEffectGenerator::Machine(uint8 Out[11], uint8 StartPositio
 {
 	StartPosition = FMath::Clamp<uint8>(StartPosition, 0, 8);
 	EndPosition = FMath::Clamp<uint8>(EndPosition, StartPosition + 1, 9);
-	
-	if (EndPosition <= StartPosition)
-		return false;
 
 	AmplitudeA = FMath::Clamp<uint8>(AmplitudeA, 0, 7);
 	AmplitudeB = FMath::Clamp<uint8>(AmplitudeB, 0, 7);

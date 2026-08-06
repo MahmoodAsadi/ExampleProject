@@ -11,6 +11,15 @@
 
 #define LOCTEXT_NAMESPACE "UIndependentInputSubsystem"
 
+namespace
+{
+	constexpr SDL_InitFlags IndependentInputSubsystemFlags =
+		SDL_INIT_EVENTS
+		| SDL_INIT_JOYSTICK
+		| SDL_INIT_GAMEPAD
+		| SDL_INIT_HAPTIC
+		| SDL_INIT_SENSOR;
+}
 
 UIndependentInputSubsystem* UIndependentInputSubsystem::Get()
 {
@@ -383,16 +392,9 @@ void UIndependentInputSubsystem::InitSDL()
 	if (bInitialized)
 		return;
 
-	const SDL_InitFlags InitFlags =
-		SDL_INIT_EVENTS
-		| SDL_INIT_JOYSTICK
-		| SDL_INIT_GAMEPAD
-		| SDL_INIT_HAPTIC
-		| SDL_INIT_SENSOR;
-
-	if (!SDL_Init(InitFlags))
+	if (!SDL_InitSubSystem(IndependentInputSubsystemFlags))
 	{
-		UE_LOG(LogIndependentInput, Error, TEXT("SDL_Init failed: %s"), UTF8_TO_TCHAR(SDL_GetError()));
+		UE_LOG(LogIndependentInput, Error, TEXT("SDL_InitSubSystem failed: %s"), UTF8_TO_TCHAR(SDL_GetError()));
 		return;
 	}
 
@@ -406,9 +408,16 @@ void UIndependentInputSubsystem::PumpEvents()
 	if (!IndependentInputDevice)
 		return;
 
+	SDL_PumpEvents();
+
 	SDL_Event Event;
 
-	while (SDL_PollEvent(&Event))
+	while (SDL_PeepEvents(
+		&Event,
+		1,
+		SDL_GETEVENT,
+		SDL_EVENT_JOYSTICK_AXIS_MOTION,
+		SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED) > 0)
 	{
 		switch (Event.type)
 		{
@@ -458,30 +467,6 @@ void UIndependentInputSubsystem::PumpEvents()
 					IndependentInputDevice->HandleHatEvent(DeviceId, Event.jhat.hat, Event.jhat.value);
 				}
 
-				break;
-			}
-
-			case SDL_EVENT_MOUSE_MOTION:
-			{
-				UE_LOG(LogTemp, Error, TEXT("Mouse motion detected [%s]"), *(FVector2D(Event.motion.xrel, Event.motion.yrel)).ToString());
-				/*const FInputDeviceInstanceId DeviceId(Event.mmotion.which);
-				const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId);
-				if (DeviceMapping && !DeviceMapping->bUseGamepadAPI && IndependentInputDevice)
-				{
-					IndependentInputDevice->HandleMouseMotionEvent(DeviceId, Event.mmotion.xrel, Event.mmotion.yrel);
-				}*/
-				break;
-			}
-
-			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-			{
-				UE_LOG(LogTemp, Error, TEXT("Mouse button down"));
-				/*const FInputDeviceInstanceId DeviceId(Event.mmotion.which);
-				const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId);
-				if (DeviceMapping && !DeviceMapping->bUseGamepadAPI && IndependentInputDevice)
-				{
-					IndependentInputDevice->HandleMouseMotionEvent(DeviceId, Event.mmotion.xrel, Event.mmotion.yrel);
-				}*/
 				break;
 			}
 
@@ -600,7 +585,7 @@ void UIndependentInputSubsystem::ShutdownSDL()
 	}
 
 	IgnoredDeviceIds.Reset();
-	SDL_Quit();
+	SDL_QuitSubSystem(IndependentInputSubsystemFlags);
 	bInitialized = false;
 	UE_LOG(LogIndependentInput, Log, TEXT("IndependentInputManager Shutdown"));
 }

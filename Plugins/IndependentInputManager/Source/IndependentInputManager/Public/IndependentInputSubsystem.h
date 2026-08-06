@@ -77,11 +77,13 @@ public:
 	bool SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId);
 
 	/**
-	 * The trigger resists movement beyond Position
+	 * The trigger resists movement beyond StartPosition
 	 * with a constant force. Formerly (mis-)implemented as "Resistance" using the deprecated
 	 * Simple_Feedback opcode (0x01).
-	 * @param Position  Zone the resistance begins at. 0-9.
-	 * @param Strength  Resistance force. 0-8 (0 disables the effect).
+	 * @param DeviceId       Device that receives the effect.
+	 * @param Trigger        Left or right adaptive trigger.
+	 * @param StartPosition  Zone where resistance begins. Clamped to 0-9.
+	 * @param Force          Resistance force. Clamped to 0-8; 0 disables the effect.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerResistance(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 Force);
@@ -89,9 +91,11 @@ public:
 	/**
 	 * Resistance builds from StartPosition to
 	 * EndPosition, then releases entirely, like pulling the trigger of a gun.
-	 * @param StartPosition  2-7.
-	 * @param EndPosition    StartPosition+1 to 8.
-	 * @param Strength       0-8 (0 disables the effect).
+	 * @param DeviceId       Device that receives the effect.
+	 * @param Trigger        Left or right adaptive trigger.
+	 * @param StartPosition  Starting zone. Clamped to 2-7.
+	 * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 8.
+	 * @param Strength       Resistance force. Clamped to 0-8; 0 disables the effect.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerWeapon(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 EndPosition, uint8 Strength);
@@ -99,19 +103,23 @@ public:
 	/**
 	 * The trigger vibrates at Frequency once
 	 * pulled beyond Position.
-	 * @param Position   Zone the vibration begins at. 0-9.
-	 * @param Amplitude  Strength of the vibration. 0-8 (0 disables the effect).
-	 * @param Frequency  Frequency in Hz (0 disables the effect).
+	 * @param DeviceId   Device that receives the effect.
+	 * @param Trigger    Left or right adaptive trigger.
+	 * @param Position   Zone where vibration begins. Clamped to 0-9.
+	 * @param Amplitude  Strength of the vibration. Clamped to 0-8; 0 disables the effect.
+	 * @param Frequency  Frequency in Hz. Full uint8 range; 0 disables the effect.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerVibration(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 Position, uint8 Amplitude, uint8 Frequency);
 
 	/**
 	 * Resembles Weapon, but with an added spring-like snap-back force.
-	 * @param StartPosition  0-8.
-	 * @param EndPosition    StartPosition+1 to 8.
-	 * @param Strength       0-8.
-	 * @param SnapForce      Force of the snap-back. 0-8.
+	 * @param DeviceId       Device that receives the effect.
+	 * @param Trigger        Left or right adaptive trigger.
+	 * @param StartPosition  Starting zone. Clamped to the effective range 0-7.
+	 * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 8.
+	 * @param Strength       Resistance force. Clamped to 0-8; 0 disables the effect.
+	 * @param SnapForce      Snap-back force. Clamped to 0-8; 0 disables the effect.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerBow(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 EndPosition, uint8 Strength, uint8 SnapForce);
@@ -119,27 +127,36 @@ public:
 	/**
 	 * Rhythmic two-beat cycling between two sub-positions; only clearly perceptible at low
 	 * frequencies.
-	 * @param StartPosition  0-8.
-	 * @param EndPosition    StartPosition+1 to 9.
-	 * @param FirstFoot      Position of the first "foot" in the cycle. 0-6.
-	 * @param SecondFoot     Position of the second "foot" in the cycle. FirstFoot+1 to 7.
-	 * @param Frequency      Frequency in Hz (0 disables the effect).
+	 * @param DeviceId       Device that receives the effect.
+	 * @param Trigger        Left or right adaptive trigger.
+	 * @param StartPosition  Starting zone. Clamped to 0-8.
+	 * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 9.
+	 * @param FirstFoot      First cycle position. Clamped to 0-6.
+	 * @param SecondFoot     Second cycle position. Clamped to FirstFoot+1 through 7.
+	 * @param Frequency      Frequency in Hz. Full uint8 range; 0 disables the effect.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerGalloping(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 EndPosition, uint8 FirstFoot, uint8 SecondFoot, uint8 Frequency);
 
 	/**
 	 * Resembles Vibration, but oscillates between two amplitudes.
-	 * @param StartPosition  1-8.
-	 * @param EndPosition    StartPosition+1 to 9.
-	 * @param AmplitudeA     Primary vibration strength. 0-7.
-	 * @param AmplitudeB     Secondary vibration strength. 0-7.
-	 * @param Frequency      Frequency in Hz (0 disables the effect).
-	 * @param Period         Period of the oscillation between AmplitudeA/B, in tenths of a second.
+	 * @param DeviceId       Device that receives the effect.
+	 * @param Trigger        Left or right adaptive trigger.
+	 * @param StartPosition  Starting zone. Clamped to 0-8.
+	 * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 9.
+	 * @param AmplitudeA     Primary cycling strength. Clamped to 0-7.
+	 * @param AmplitudeB     Secondary cycling strength. Clamped to 0-7.
+	 * @param Frequency      Frequency in Hz. Full uint8 range; 0 disables the effect.
+	 * @param Period         Oscillation period in tenths of a second. Full uint8 range.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool SetAdaptiveTriggerMachine(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 EndPosition, uint8 AmplitudeA, uint8 AmplitudeB, uint8 Frequency, uint8 Period);
 
+	/**
+	 * Clears the active adaptive-trigger effect and returns the trigger stop to neutral.
+	 * @param DeviceId  Device whose effect is cleared.
+	 * @param Trigger   Left or right adaptive trigger.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool ClearAdaptiveTriggerEffect(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger);
 
