@@ -76,6 +76,92 @@ namespace
 		}
 	}
 
+	FKey GetMappedRuntimeKey(
+		const FJoystickDeviceKeyMapping& DeviceKeyMapping,
+		const FIndependentInputKey& Key)
+	{
+		if (!Key.bCustomKey)
+			return Key.Key;
+
+		return FKey(FName(*(DeviceKeyMapping.MappingId.ToString() + Key.GetKeyName().ToString())));
+	}
+
+	bool ValidatePairedKeyRegistration(
+		const FJoystickDeviceIdentifier& DeviceIdentifier,
+		const FJoystickDeviceKeyMapping& DeviceKeyMapping,
+		const FIndependentInputKey& KeyX,
+		const FIndependentInputKey& KeyY,
+		const FString& PairedKeyName,
+		const FString& Source,
+		FText& OutValidationError)
+	{
+		const FKey RuntimeKeyX = GetMappedRuntimeKey(DeviceKeyMapping, KeyX);
+		const FKey RuntimeKeyY = GetMappedRuntimeKey(DeviceKeyMapping, KeyY);
+		const FKey PairedKey(FName(*(DeviceKeyMapping.MappingId.ToString() + PairedKeyName)));
+
+		if (const EKeys::FPairedKeyDetails* ExistingPair = EKeys::GetPairedKeyDetails(PairedKey))
+		{
+			const FKey ExistingKeyX =
+				ExistingPair->XKeyDetails.IsValid() ? ExistingPair->XKeyDetails->GetKey() : FKey();
+			const FKey ExistingKeyY =
+				ExistingPair->YKeyDetails.IsValid() ? ExistingPair->YKeyDetails->GetKey() : FKey();
+			if (ExistingKeyX != RuntimeKeyX || ExistingKeyY != RuntimeKeyY)
+			{
+				OutValidationError = FText::Format(
+					LOCTEXT(
+						"ExistingPairedKeyComponentsConflict",
+						"{0}: {1} cannot use X key \"{2}\" and Y key \"{3}\" because paired key \"{4}\" is already "
+						"registered with X key \"{5}\" and Y key \"{6}\". Rename both X and Y keys together."),
+					FText::FromString(DeviceIdentifier.ToString()),
+					FText::FromString(Source),
+					FText::FromName(RuntimeKeyX.GetFName()),
+					FText::FromName(RuntimeKeyY.GetFName()),
+					FText::FromName(PairedKey.GetFName()),
+					FText::FromName(ExistingKeyX.GetFName()),
+					FText::FromName(ExistingKeyY.GetFName()));
+				return false;
+			}
+
+			return true;
+		}
+
+		const TSharedPtr<FKeyDetails> KeyXDetails = EKeys::GetKeyDetails(RuntimeKeyX);
+		if (KeyXDetails
+			&& KeyXDetails->GetPairedAxis() != EPairedAxis::Unpaired
+			&& KeyXDetails->GetPairedAxisKey() != PairedKey)
+		{
+			OutValidationError = FText::Format(
+				LOCTEXT(
+					"PairedXKeyAlreadyInUse",
+					"{0}: {1} cannot use X key \"{2}\" because it is already part of paired key \"{3}\". "
+					"Rename both X and Y keys together, or choose an unpaired Axis1D key."),
+				FText::FromString(DeviceIdentifier.ToString()),
+				FText::FromString(Source),
+				FText::FromName(RuntimeKeyX.GetFName()),
+				FText::FromName(KeyXDetails->GetPairedAxisKey().GetFName()));
+			return false;
+		}
+
+		const TSharedPtr<FKeyDetails> KeyYDetails = EKeys::GetKeyDetails(RuntimeKeyY);
+		if (KeyYDetails
+			&& KeyYDetails->GetPairedAxis() != EPairedAxis::Unpaired
+			&& KeyYDetails->GetPairedAxisKey() != PairedKey)
+		{
+			OutValidationError = FText::Format(
+				LOCTEXT(
+					"PairedYKeyAlreadyInUse",
+					"{0}: {1} cannot use Y key \"{2}\" because it is already part of paired key \"{3}\". "
+					"Rename both X and Y keys together, or choose an unpaired Axis1D key."),
+				FText::FromString(DeviceIdentifier.ToString()),
+				FText::FromString(Source),
+				FText::FromName(RuntimeKeyY.GetFName()),
+				FText::FromName(KeyYDetails->GetPairedAxisKey().GetFName()));
+			return false;
+		}
+
+		return true;
+	}
+
 	bool HasExpectedType(const FKeyDetails& KeyDetails, ECustomKeyType ExpectedType)
 	{
 		switch (ExpectedType)
@@ -376,6 +462,14 @@ namespace
 					BallSource + TEXT(", Delta 2D"),
 					ECustomKeyType::Axis2D,
 					KeyUses,
+					OutValidationError)
+				|| !ValidatePairedKeyRegistration(
+					DeviceIdentifier,
+					DeviceKeyMapping,
+					BallMapping.X.Key,
+					BallMapping.Y.Key,
+					PairedKeyName,
+					BallSource + TEXT(", Delta 2D"),
 					OutValidationError))
 			{
 				return false;
@@ -481,14 +575,22 @@ namespace
 				FString PairedKeyDisplayName;
 				GetPairedKeyNames(Finger.PositionX, PairedKeyName, PairedKeyDisplayName);
 				if (!AddDerivedKey(
-					DeviceIdentifier,
-					DeviceKeyMapping,
-					PairedKeyName,
-					PairedKeyDisplayName,
-					FingerSource + TEXT(", Position 2D"),
-					ECustomKeyType::Axis2D,
-					KeyUses,
-					OutValidationError))
+						DeviceIdentifier,
+						DeviceKeyMapping,
+						PairedKeyName,
+						PairedKeyDisplayName,
+						FingerSource + TEXT(", Position 2D"),
+						ECustomKeyType::Axis2D,
+						KeyUses,
+						OutValidationError)
+					|| !ValidatePairedKeyRegistration(
+						DeviceIdentifier,
+						DeviceKeyMapping,
+						Finger.PositionX,
+						Finger.PositionY,
+						PairedKeyName,
+						FingerSource + TEXT(", Position 2D"),
+						OutValidationError))
 				{
 					return false;
 				}
