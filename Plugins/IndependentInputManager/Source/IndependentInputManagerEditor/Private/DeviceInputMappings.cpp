@@ -569,8 +569,7 @@ namespace
 			{
 				const FJoystickTouchpadFingerKeyMapping& Finger = TouchpadMapping.Fingers[FingerArrayIndex];
 				const int32 FingerIndex = Finger.FingerIndex == INDEX_NONE ? FingerArrayIndex : Finger.FingerIndex;
-				const FString FingerSource =
-					FString::Printf(TEXT("Touchpad %d, Finger %d"), TouchpadIndex, FingerIndex);
+				const FString FingerSource = FString::Printf(TEXT("Touchpad %d, Finger %d"), TouchpadIndex, FingerIndex);
 
 				if (!AddInputKey(
 						DeviceIdentifier,

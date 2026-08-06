@@ -569,7 +569,7 @@ void SDeviceKeyMapping::RefreshButtonsContainer()
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
-								.Title(LOCTEXT("DeviceDetailsWindowTitle", "Button Input Mapping"))
+								.Title(LOCTEXT("ButtonInputMappingWindowTitle", "Button Input Mapping"))
 								.ClientSize(FVector2D(500.f, 300.f))
 								.SupportsMinimize(false)
 								.SupportsMaximize(true)
@@ -726,7 +726,7 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
-								.Title(LOCTEXT("DeviceDetailsWindowTitle", "Axis Input Mapping"))
+								.Title(LOCTEXT("AxisInputMappingWindowTitle", "Axis Input Mapping"))
 								.ClientSize(FVector2D(500.f, 700.f))
 								.SupportsMinimize(false)
 								.SupportsMaximize(true)
@@ -847,7 +847,7 @@ void SDeviceKeyMapping::RefreshHatsContainer()
 
 						Self->InputMappingEditor =
 							SNew(SWindow)
-							.Title(LOCTEXT("DeviceDetailsWindowTitle", "Hat Input Mapping"))
+							.Title(LOCTEXT("HatInputMappingWindowTitle", "Hat Input Mapping"))
 							.ClientSize(FVector2D(500.f, 700.f))
 							.SupportsMinimize(false)
 							.SupportsMaximize(true)
@@ -969,7 +969,7 @@ void SDeviceKeyMapping::RefreshBallsContainer()
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
-								.Title(LOCTEXT("DeviceDetailsWindowTitle", "Ball Input Mapping"))
+								.Title(LOCTEXT("BallInputMappingWindowTitle", "Ball Input Mapping"))
 								.ClientSize(FVector2D(500.f, 700.f))
 								.SupportsMinimize(false)
 								.SupportsMaximize(true)
@@ -1105,7 +1105,7 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
-								.Title(LOCTEXT("DeviceDetailsWindowTitle", "Touchpad Input Mapping"))
+								.Title(LOCTEXT("TouchpadInputMappingWindowTitle", "Touchpad Input Mapping"))
 								.ClientSize(FVector2D(500.f, 700.f))
 								.SupportsMinimize(false)
 								.SupportsMaximize(true)
@@ -1230,7 +1230,7 @@ void SDeviceKeyMapping::RefreshSensorContainer()
 
 							Self->InputMappingEditor =
 								SNew(SWindow)
-								.Title(LOCTEXT("DeviceDetailsWindowTitle", "Sensor Input Mapping"))
+								.Title(LOCTEXT("SensorInputMappingWindowTitle", "Sensor Input Mapping"))
 								.ClientSize(FVector2D(500.f, 700.f))
 								.SupportsMinimize(false)
 								.SupportsMaximize(true)
