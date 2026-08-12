@@ -109,7 +109,15 @@ void SDeviceKeyMapping::Construct(const FArguments& InArgs)
 
 void SDeviceKeyMapping::DevicePluggedIn(const FJoystickDeviceInfo& InDeviceInfo)
 {
-	UpdateList(InDeviceInfo.Identifier);
+	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid()
+		? SelectedDeviceIdentifier->DeviceIdentifier
+		: InDeviceInfo.Identifier;
+
+	const FInputDeviceInstanceId PreferredPreviewDeviceId = PreferredSelection == InDeviceInfo.Identifier
+		? SelectedPreviewDeviceId
+		: FInputDeviceInstanceId();
+
+	UpdateList(PreferredSelection, PreferredPreviewDeviceId);
 }
 
 void SDeviceKeyMapping::DeviceUnplugged(const FJoystickDeviceInfo& InDeviceInfo)
@@ -118,20 +126,25 @@ void SDeviceKeyMapping::DeviceUnplugged(const FJoystickDeviceInfo& InDeviceInfo)
 		? SelectedDeviceIdentifier->DeviceIdentifier
 		: FJoystickDeviceIdentifier();
 
-	UpdateList(PreferredSelection);
+	UpdateList(PreferredSelection, SelectedPreviewDeviceId);
 }
 
-void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSelection)
+void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSelection, const FInputDeviceInstanceId& PreferedPreviewDeviceId)
 {
 	DeviceMappings.Empty();
+	PreviewDevices.Empty();
 	const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get();
 	const UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
 	if (!IsValid(InputSettings))
 	{
 		SelectedDeviceIdentifier = nullptr;
+		SelectedPreviewDevice = nullptr;
+		SelectedPreviewDeviceId = FInputDeviceInstanceId();
 		DeviceKeyMapping = FJoystickDeviceKeyMapping();
 		if (MappingComboBox)
 			MappingComboBox->SetSelectedItem(nullptr);
+		if (PreviewDeviceComboBox)
+			PreviewDeviceComboBox->SetSelectedItem(nullptr);
 		RefreshOptions();
 		RefreshDeviceKeyMappingContainer();
 		return;
@@ -141,9 +154,13 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 	if (KeyMappings.Num() == 0)
 	{
 		SelectedDeviceIdentifier = nullptr;
+		SelectedPreviewDevice = nullptr;
+		SelectedPreviewDeviceId = FInputDeviceInstanceId();
 		DeviceKeyMapping = FJoystickDeviceKeyMapping();
 		if (MappingComboBox)
 			MappingComboBox->SetSelectedItem(nullptr);
+		if (PreviewDeviceComboBox)
+			PreviewDeviceComboBox->SetSelectedItem(nullptr);
 		RefreshOptions();
 		RefreshDeviceKeyMappingContainer();
 		return;
@@ -153,11 +170,6 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 	for (const TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& KeyMapping : KeyMappings)
 	{
 		TSharedPtr<FKeyMappingDeviceIdentifier> NewMapping = MakeShared<FKeyMappingDeviceIdentifier>(KeyMapping.Key);
-		if (InputSubsystem)
-		{
-			if (const FJoystickDeviceInfo* DeviceInfo = InputSubsystem->FindDeviceInfoByIdentifier(KeyMapping.Key))
-				NewMapping->DeviceInstanceId = DeviceInfo->InstanceId;
-		}
 
 		DeviceMappings.Add(NewMapping);
 
@@ -186,14 +198,75 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 			DeviceKeyMapping = *FoundMapping;
 	}
 
+	UpdatePreviewDevices(PreferedPreviewDeviceId);
 	RefreshOptions();
 	RefreshDeviceKeyMappingContainer();
+}
+
+void SDeviceKeyMapping::UpdatePreviewDevices(const FInputDeviceInstanceId& PreferedPreviewDeviceId)
+{
+	const FInputDeviceInstanceId PreviousPreviewDeviceId = SelectedPreviewDeviceId;
+
+	PreviewDevices.Empty();
+	SelectedPreviewDevice.Reset();
+	SelectedPreviewDeviceId = FInputDeviceInstanceId();
+
+	if (!SelectedDeviceIdentifier.IsValid())
+	{
+		if (PreviewDeviceComboBox)
+			PreviewDeviceComboBox->SetSelectedItem(nullptr);
+		return;
+	}
+
+	const UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
+	if (!InputSubsystem)
+	{
+		if (PreviewDeviceComboBox)
+			PreviewDeviceComboBox->SetSelectedItem(nullptr);
+		return;
+	}
+
+	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& ConnectedDevice : InputSubsystem->GetConnectedDevices())
+	{
+		if (ConnectedDevice.Value.Identifier == SelectedDeviceIdentifier->DeviceIdentifier)
+			PreviewDevices.Add(MakeShared<FKeyMappingPreviewDevice>(ConnectedDevice.Value));
+	}
+
+	PreviewDevices.Sort([](const TSharedPtr<FKeyMappingPreviewDevice>& A, const TSharedPtr<FKeyMappingPreviewDevice>& B)
+		{
+			return A->DeviceInfo.InstanceId.GetId() < B->DeviceInfo.InstanceId.GetId();
+		});
+
+	const FInputDeviceInstanceId PreferredPreviewDeviceId = PreferedPreviewDeviceId.IsValid()
+		? PreferedPreviewDeviceId
+		: PreviousPreviewDeviceId;
+
+	for (const TSharedPtr<FKeyMappingPreviewDevice>& PreviewDevice : PreviewDevices)
+	{
+		if (PreviewDevice->DeviceInfo.InstanceId == PreferredPreviewDeviceId)
+		{
+			SelectedPreviewDevice = PreviewDevice;
+			break;
+		}
+	}
+
+	if (!SelectedPreviewDevice.IsValid() && PreviewDevices.Num() > 0)
+		SelectedPreviewDevice = PreviewDevices[0];
+
+	if (SelectedPreviewDevice.IsValid())
+		SelectedPreviewDeviceId = SelectedPreviewDevice->DeviceInfo.InstanceId;
+
+	if (PreviewDeviceComboBox)
+		PreviewDeviceComboBox->SetSelectedItem(SelectedPreviewDevice);
 }
 
 void SDeviceKeyMapping::RefreshOptions() const
 {
 	if (MappingComboBox)
 		MappingComboBox->RefreshOptions();
+
+	if (PreviewDeviceComboBox)
+		PreviewDeviceComboBox->RefreshOptions();
 }
 
 TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
@@ -243,9 +316,12 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 
 								if (const FJoystickDeviceKeyMapping* KeyMapping = InputSettings->FindDeviceKeyMappings(InItem->DeviceIdentifier))
 								{
+									const UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
 									FText DeviceName = FText::Format(LOCTEXT("DeviceNameWithConnectionStatusFormat", "{0}{1}"),
 										FText::FromString(KeyMapping->DeviceName),
-										InItem->DeviceInstanceId.IsValid() ? LOCTEXT("DeviceLabel", ": Connected") : FText::GetEmpty());
+										InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(InItem->DeviceIdentifier)
+											? LOCTEXT("DeviceLabel", ": Connected")
+											: FText::GetEmpty());
 
 									return SNew(STextBlock)
 										.Text(DeviceName)
@@ -269,6 +345,8 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 									}
 								}
 
+								UpdatePreviewDevices(FInputDeviceInstanceId());
+								RefreshOptions();
 								RefreshDeviceKeyMappingContainer();
 							})
 						.InitiallySelectedItem(SelectedDeviceIdentifier)
@@ -304,7 +382,85 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 								.TextStyle(FAppStyle::Get(), "NormalText")
 						]
 				]
+		]
+
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(0.0f, 8.0f, 0.0f, 0.0f)
+		[
+			CreatePreviewDeviceSelector()
 		];
+}
+
+TSharedRef<SWidget> SDeviceKeyMapping::CreatePreviewDeviceSelector()
+{
+	return SNew(SHorizontalBox)
+		
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.Padding(0.0f, 0.0f, 8.0f, 0.0f)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("PreviewDeviceLabel", "Preview:"))
+			.TextStyle(FAppStyle::Get(), "NormalText")
+		]
+
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		.MaxWidth(400.0f)
+		[
+			SAssignNew(PreviewDeviceComboBox, SComboBox<TSharedPtr<FKeyMappingPreviewDevice>>)
+			.OptionsSource(&PreviewDevices)
+			.OnGenerateWidget_Lambda([this](const TSharedPtr<FKeyMappingPreviewDevice>& InItem)
+				{
+					if (!InItem.IsValid())
+					{
+						return SNew(STextBlock)
+							.Text(FText::FromString("None"))
+							.TextStyle(FAppStyle::Get(), "NormalText");
+					}
+
+					return SNew(STextBlock)
+						.Text(GetPreviewDeviceDisplayText(InItem->DeviceInfo))
+						.TextStyle(FAppStyle::Get(), "NormalText");
+				})
+			.OnSelectionChanged_Lambda([this](const TSharedPtr<FKeyMappingPreviewDevice>& NewSelection, ESelectInfo::Type)
+				{
+					SelectedPreviewDevice = NewSelection;
+					SelectedPreviewDeviceId = SelectedPreviewDevice.IsValid()
+						? SelectedPreviewDevice->DeviceInfo.InstanceId
+						: FInputDeviceInstanceId();
+				})
+			.InitiallySelectedItem(SelectedPreviewDevice)
+			[
+				SNew(STextBlock)
+				.Text_Lambda([this]() -> FText
+					{
+						return SelectedPreviewDevice.IsValid()
+							? GetPreviewDeviceDisplayText(SelectedPreviewDevice->DeviceInfo)
+							: FText::FromString("None");
+					})
+				.TextStyle(FAppStyle::Get(), "NormalText")
+			]
+		];
+}
+
+FInputDeviceInstanceId SDeviceKeyMapping::GetSelectedPreviewDeviceId() const
+{
+	return SelectedPreviewDeviceId;
+}
+
+FText SDeviceKeyMapping::GetPreviewDeviceDisplayText(const FJoystickDeviceInfo& DeviceInfo) const
+{
+	const FText PlayerIndex = DeviceInfo.PlayerIndex >= 0
+		? FText::AsNumber(DeviceInfo.PlayerIndex)
+		: LOCTEXT("PreviewDeviceUnassignedPlayer", "Unassigned");
+
+	return FText::Format(LOCTEXT("PreviewDeviceDisplayFormat", "{0} - Instance {1} - Player {2}"),
+		FText::FromString(DeviceInfo.DeviceName),
+		FText::AsNumber(DeviceInfo.InstanceId.GetId()),
+		PlayerIndex);
 }
 
 TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileInfoSection()
@@ -558,8 +714,9 @@ void SDeviceKeyMapping::RefreshButtonsContainer()
 							if (!Self)
 								return false;
 
-							if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-								return InputDevice->GetButtonState(Self->SelectedDeviceIdentifier->DeviceInstanceId, ButtonMapping.Key);
+							const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+							if (PreviewDeviceId.IsValid() && InputDevice)
+								return InputDevice->GetButtonState(PreviewDeviceId, ButtonMapping.Key);
 
 							return false;
 						})
@@ -679,8 +836,9 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 					if (!Self)
 						return false;
 
-					if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-						return InputDevice->GetAxisVirtualButtonState(Self->SelectedDeviceIdentifier->DeviceInstanceId, AxisMapping.Key, VirtualButtonIndex);
+					const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+					if (PreviewDeviceId.IsValid() && InputDevice)
+						return InputDevice->GetAxisVirtualButtonState(PreviewDeviceId, AxisMapping.Key, VirtualButtonIndex);
 
 					return false;
 				}));
@@ -703,8 +861,9 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 							if (!Self)
 								return 0.0f;
 
-							if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-								return InputDevice->GetAxisRawState(Self->SelectedDeviceIdentifier->DeviceInstanceId, AxisMapping.Key);
+							const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+							if (PreviewDeviceId.IsValid() && InputDevice)
+								return InputDevice->GetAxisRawState(PreviewDeviceId, AxisMapping.Key);
 
 							return 0.0f;
 						})
@@ -714,8 +873,9 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 							if (!Self)
 								return 0.0f;
 
-							if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-								return InputDevice->GetAxisState(Self->SelectedDeviceIdentifier->DeviceInstanceId, AxisMapping.Key);
+							const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+							if (PreviewDeviceId.IsValid() && InputDevice)
+								return InputDevice->GetAxisState(PreviewDeviceId, AxisMapping.Key);
 
 							return 0.0f;
 						})
@@ -835,8 +995,9 @@ void SDeviceKeyMapping::RefreshHatsContainer()
 						if (!Self)
 							return uint8(0);
 
-						if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-							return InputDevice->GetHatState(Self->SelectedDeviceIdentifier->DeviceInstanceId, HatMapping.Key);
+						const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+						if (PreviewDeviceId.IsValid() && InputDevice)
+							return InputDevice->GetHatState(PreviewDeviceId, HatMapping.Key);
 
 						return uint8(0);
 					}))
@@ -954,8 +1115,9 @@ void SDeviceKeyMapping::RefreshBallsContainer()
 							if (!Self)
 								return FVector2D::ZeroVector;
 
-							if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-								return InputDevice->GetBallState(Self->SelectedDeviceIdentifier->DeviceInstanceId, BallMapping.Key);
+							const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+							if (PreviewDeviceId.IsValid() && InputDevice)
+								return InputDevice->GetBallState(PreviewDeviceId, BallMapping.Key);
 
 							return FVector2D::ZeroVector;
 						}))
@@ -1073,8 +1235,9 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 					if (!Self)
 						return FTouchFingerState();
 
-					if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-						return InputDevice->GetTouchpadFingerState(Self->SelectedDeviceIdentifier->DeviceInstanceId, TouchpadMapping.Key, FingerIndex);
+					const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+					if (PreviewDeviceId.IsValid() && InputDevice)
+						return InputDevice->GetTouchpadFingerState(PreviewDeviceId, TouchpadMapping.Key, FingerIndex);
 
 					return FTouchFingerState();
 				}));
@@ -1211,8 +1374,9 @@ void SDeviceKeyMapping::RefreshSensorContainer()
 							if (!Self)
 								return FSensorState();
 
-							if (Self->SelectedDeviceIdentifier->DeviceInstanceId.IsValid() && InputDevice)
-								return InputDevice->GetSensorState(Self->SelectedDeviceIdentifier->DeviceInstanceId, SensorMapping.Key);
+							const FInputDeviceInstanceId PreviewDeviceId = Self->GetSelectedPreviewDeviceId();
+							if (PreviewDeviceId.IsValid() && InputDevice)
+								return InputDevice->GetSensorState(PreviewDeviceId, SensorMapping.Key);
 
 							return FSensorState();
 						}))

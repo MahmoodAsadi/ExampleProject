@@ -28,28 +28,28 @@ public:
 	{
 	}
 
-	FKeyMappingDeviceIdentifier(const FJoystickDeviceIdentifier& InDeviceIdentifier, const FInputDeviceInstanceId& InDeviceInstanceId)
-		: DeviceIdentifier(InDeviceIdentifier)
-		, DeviceInstanceId(InDeviceInstanceId)
-	{
-	}
-
 	UPROPERTY()
 	FJoystickDeviceIdentifier DeviceIdentifier;
-
-	UPROPERTY()
-	FInputDeviceInstanceId DeviceInstanceId;
 
 	friend uint32 GetTypeHash(const FKeyMappingDeviceIdentifier& Other)
 	{
 		uint32 Hash = GetTypeHash(Other.DeviceIdentifier.VendorId);
 		Hash = HashCombine(Hash, GetTypeHash(Other.DeviceIdentifier.ProductId));
-
-		if (Other.DeviceInstanceId.IsValid())
-			Hash = HashCombine(Hash, GetTypeHash(Other.DeviceInstanceId.GetId()));
 		
 		return Hash;
 	}
+
+};
+
+struct FKeyMappingPreviewDevice
+{
+	FKeyMappingPreviewDevice() {}
+	FKeyMappingPreviewDevice(const FJoystickDeviceInfo& InDeviceInfo)
+		: DeviceInfo(InDeviceInfo)
+	{
+	}
+
+	FJoystickDeviceInfo DeviceInfo;
 
 };
 
@@ -74,9 +74,11 @@ public:
 
 private:
 
-	void UpdateList(const FJoystickDeviceIdentifier& PreferedSelection);
+	void UpdateList(const FJoystickDeviceIdentifier& PreferedSelection, const FInputDeviceInstanceId& PreferedPreviewDeviceId = FInputDeviceInstanceId());
+	void UpdatePreviewDevices(const FInputDeviceInstanceId& PreferedPreviewDeviceId);
 	void RefreshOptions() const;
 	TSharedRef<SWidget> CreateProfileSelectionSection();
+	TSharedRef<SWidget> CreatePreviewDeviceSelector();
 	TSharedRef<SWidget> CreateProfileInfoSection();
 	TSharedRef<SWidget> CreateDeviceKeyMappingSection();
 	void ApplyDeviceKeyMapping(const UDeviceInputMappingBase& InputMapping);
@@ -89,11 +91,17 @@ private:
 	void RefreshSensorContainer();
 	void CloseInputMappingEditor();
 
+	FInputDeviceInstanceId GetSelectedPreviewDeviceId() const;
+	FText GetPreviewDeviceDisplayText(const FJoystickDeviceInfo& DeviceInfo) const;
 	TSharedRef<SWidget> CreatePropertyRow(const FText& Label, TAttribute<FText> Value);
 
 	TSharedPtr<SComboBox<TSharedPtr<FKeyMappingDeviceIdentifier>>> MappingComboBox;
+	TSharedPtr<SComboBox<TSharedPtr<FKeyMappingPreviewDevice>>> PreviewDeviceComboBox;
 	TArray<TSharedPtr<FKeyMappingDeviceIdentifier>> DeviceMappings;
+	TArray<TSharedPtr<FKeyMappingPreviewDevice>> PreviewDevices;
 	TSharedPtr<FKeyMappingDeviceIdentifier> SelectedDeviceIdentifier;
+	TSharedPtr<FKeyMappingPreviewDevice> SelectedPreviewDevice;
+	FInputDeviceInstanceId SelectedPreviewDeviceId;
 	FJoystickDeviceKeyMapping DeviceKeyMapping;
 	TSharedPtr<SVerticalBox> ButtonSectionContainer;
 	TSharedPtr<SVerticalBox> AxisSectionContainer;
