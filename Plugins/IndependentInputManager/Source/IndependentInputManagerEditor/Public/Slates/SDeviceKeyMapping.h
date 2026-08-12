@@ -7,51 +7,12 @@
 #include "Widgets/SCompoundWidget.h"
 
 #include "IndependentInputManagerTypes.h"
-#include "SDeviceKeyMapping.generated.h"
 
 template <typename OptionType>
 class SComboBox;
 class SVerticalBox;
 class SWindow;
 class UDeviceInputMappingBase;
-
-USTRUCT()
-struct FKeyMappingDeviceIdentifier
-{
-	GENERATED_BODY()
-
-public:
-
-	FKeyMappingDeviceIdentifier() {}
-	FKeyMappingDeviceIdentifier(const FJoystickDeviceIdentifier& InDeviceIdentifier)
-		: DeviceIdentifier(InDeviceIdentifier)
-	{
-	}
-
-	UPROPERTY()
-	FJoystickDeviceIdentifier DeviceIdentifier;
-
-	friend uint32 GetTypeHash(const FKeyMappingDeviceIdentifier& Other)
-	{
-		uint32 Hash = GetTypeHash(Other.DeviceIdentifier.VendorId);
-		Hash = HashCombine(Hash, GetTypeHash(Other.DeviceIdentifier.ProductId));
-		
-		return Hash;
-	}
-
-};
-
-struct FKeyMappingPreviewDevice
-{
-	FKeyMappingPreviewDevice() {}
-	FKeyMappingPreviewDevice(const FJoystickDeviceInfo& InDeviceInfo)
-		: DeviceInfo(InDeviceInfo)
-	{
-	}
-
-	FJoystickDeviceInfo DeviceInfo;
-
-};
 
 /**
  * 
@@ -95,12 +56,12 @@ private:
 	FText GetPreviewDeviceDisplayText(const FJoystickDeviceInfo& DeviceInfo) const;
 	TSharedRef<SWidget> CreatePropertyRow(const FText& Label, TAttribute<FText> Value);
 
-	TSharedPtr<SComboBox<TSharedPtr<FKeyMappingDeviceIdentifier>>> MappingComboBox;
-	TSharedPtr<SComboBox<TSharedPtr<FKeyMappingPreviewDevice>>> PreviewDeviceComboBox;
-	TArray<TSharedPtr<FKeyMappingDeviceIdentifier>> DeviceMappings;
-	TArray<TSharedPtr<FKeyMappingPreviewDevice>> PreviewDevices;
-	TSharedPtr<FKeyMappingDeviceIdentifier> SelectedDeviceIdentifier;
-	TSharedPtr<FKeyMappingPreviewDevice> SelectedPreviewDevice;
+	TSharedPtr<SComboBox<TSharedPtr<FJoystickDeviceIdentifier>>> MappingComboBox;
+	TSharedPtr<SComboBox<TSharedPtr<FJoystickDeviceInfo>>> PreviewDeviceComboBox;
+	TArray<TSharedPtr<FJoystickDeviceIdentifier>> DeviceMappings;
+	TArray<TSharedPtr<FJoystickDeviceInfo>> PreviewDevices;
+	TSharedPtr<FJoystickDeviceIdentifier> SelectedDeviceIdentifier;
+	TSharedPtr<FJoystickDeviceInfo> SelectedPreviewDevice;
 	FInputDeviceInstanceId SelectedPreviewDeviceId;
 	FJoystickDeviceKeyMapping DeviceKeyMapping;
 	TSharedPtr<SVerticalBox> ButtonSectionContainer;

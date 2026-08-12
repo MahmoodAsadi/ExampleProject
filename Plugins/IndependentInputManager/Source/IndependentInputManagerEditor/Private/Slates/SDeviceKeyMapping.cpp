@@ -110,7 +110,7 @@ void SDeviceKeyMapping::Construct(const FArguments& InArgs)
 void SDeviceKeyMapping::DevicePluggedIn(const FJoystickDeviceInfo& InDeviceInfo)
 {
 	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid()
-		? SelectedDeviceIdentifier->DeviceIdentifier
+		? *SelectedDeviceIdentifier.Get()
 		: InDeviceInfo.Identifier;
 
 	const FInputDeviceInstanceId PreferredPreviewDeviceId = PreferredSelection == InDeviceInfo.Identifier
@@ -123,7 +123,7 @@ void SDeviceKeyMapping::DevicePluggedIn(const FJoystickDeviceInfo& InDeviceInfo)
 void SDeviceKeyMapping::DeviceUnplugged(const FJoystickDeviceInfo& InDeviceInfo)
 {
 	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid()
-		? SelectedDeviceIdentifier->DeviceIdentifier
+		? *SelectedDeviceIdentifier.Get()
 		: FJoystickDeviceIdentifier();
 
 	UpdateList(PreferredSelection, SelectedPreviewDeviceId);
@@ -169,7 +169,7 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 	SelectedDeviceIdentifier.Reset();
 	for (const TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& KeyMapping : KeyMappings)
 	{
-		TSharedPtr<FKeyMappingDeviceIdentifier> NewMapping = MakeShared<FKeyMappingDeviceIdentifier>(KeyMapping.Key);
+		TSharedPtr<FJoystickDeviceIdentifier> NewMapping = MakeShared<FJoystickDeviceIdentifier>(KeyMapping.Key);
 
 		DeviceMappings.Add(NewMapping);
 
@@ -177,12 +177,12 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 			SelectedDeviceIdentifier = NewMapping;
 	}
 
-	DeviceMappings.Sort([](const TSharedPtr<FKeyMappingDeviceIdentifier>& A, const TSharedPtr<FKeyMappingDeviceIdentifier>& B)
+	DeviceMappings.Sort([](const TSharedPtr<FJoystickDeviceIdentifier>& A, const TSharedPtr<FJoystickDeviceIdentifier>& B)
 		{
-			if (A->DeviceIdentifier.VendorId == B->DeviceIdentifier.VendorId)
-				return A->DeviceIdentifier.ProductId < B->DeviceIdentifier.ProductId;
+			if (A->VendorId == B->VendorId)
+				return A->ProductId < B->ProductId;
 
-			return A->DeviceIdentifier.VendorId < B->DeviceIdentifier.VendorId;
+			return A->VendorId < B->VendorId;
 		});
 
 	if (!SelectedDeviceIdentifier.IsValid())
@@ -194,7 +194,7 @@ void SDeviceKeyMapping::UpdateList(const FJoystickDeviceIdentifier& PreferedSele
 	DeviceKeyMapping = FJoystickDeviceKeyMapping();
 	if (SelectedDeviceIdentifier.IsValid())
 	{
-		if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(SelectedDeviceIdentifier->DeviceIdentifier))
+		if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(*SelectedDeviceIdentifier.Get()))
 			DeviceKeyMapping = *FoundMapping;
 	}
 
@@ -228,22 +228,22 @@ void SDeviceKeyMapping::UpdatePreviewDevices(const FInputDeviceInstanceId& Prefe
 
 	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& ConnectedDevice : InputSubsystem->GetConnectedDevices())
 	{
-		if (ConnectedDevice.Value.Identifier == SelectedDeviceIdentifier->DeviceIdentifier)
-			PreviewDevices.Add(MakeShared<FKeyMappingPreviewDevice>(ConnectedDevice.Value));
+		if (ConnectedDevice.Value.Identifier == *SelectedDeviceIdentifier.Get())
+			PreviewDevices.Add(MakeShared<FJoystickDeviceInfo>(ConnectedDevice.Value));
 	}
 
-	PreviewDevices.Sort([](const TSharedPtr<FKeyMappingPreviewDevice>& A, const TSharedPtr<FKeyMappingPreviewDevice>& B)
+	PreviewDevices.Sort([](const TSharedPtr<FJoystickDeviceInfo>& A, const TSharedPtr<FJoystickDeviceInfo>& B)
 		{
-			return A->DeviceInfo.InstanceId.GetId() < B->DeviceInfo.InstanceId.GetId();
+			return A->InstanceId.GetId() < B->InstanceId.GetId();
 		});
 
 	const FInputDeviceInstanceId PreferredPreviewDeviceId = PreferedPreviewDeviceId.IsValid()
 		? PreferedPreviewDeviceId
 		: PreviousPreviewDeviceId;
 
-	for (const TSharedPtr<FKeyMappingPreviewDevice>& PreviewDevice : PreviewDevices)
+	for (const TSharedPtr<FJoystickDeviceInfo>& PreviewDevice : PreviewDevices)
 	{
-		if (PreviewDevice->DeviceInfo.InstanceId == PreferredPreviewDeviceId)
+		if (PreviewDevice->InstanceId == PreferredPreviewDeviceId)
 		{
 			SelectedPreviewDevice = PreviewDevice;
 			break;
@@ -254,7 +254,7 @@ void SDeviceKeyMapping::UpdatePreviewDevices(const FInputDeviceInstanceId& Prefe
 		SelectedPreviewDevice = PreviewDevices[0];
 
 	if (SelectedPreviewDevice.IsValid())
-		SelectedPreviewDeviceId = SelectedPreviewDevice->DeviceInfo.InstanceId;
+		SelectedPreviewDeviceId = SelectedPreviewDevice->InstanceId;
 
 	if (PreviewDeviceComboBox)
 		PreviewDeviceComboBox->SetSelectedItem(SelectedPreviewDevice);
@@ -302,9 +302,9 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 				.FillWidth(1.0f)
 				.MaxWidth(400.0f)
 				[
-					SAssignNew(MappingComboBox, SComboBox<TSharedPtr<FKeyMappingDeviceIdentifier>>)
+					SAssignNew(MappingComboBox, SComboBox<TSharedPtr<FJoystickDeviceIdentifier>>)
 						.OptionsSource(&DeviceMappings)
-						.OnGenerateWidget_Lambda([this](const TSharedPtr<FKeyMappingDeviceIdentifier>& InItem)
+						.OnGenerateWidget_Lambda([this](const TSharedPtr<FJoystickDeviceIdentifier>& InItem)
 							{
 								const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get();
 								if (!IsValid(InputSettings))
@@ -314,12 +314,12 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 										.TextStyle(FAppStyle::Get(), "NormalText");
 								}
 
-								if (const FJoystickDeviceKeyMapping* KeyMapping = InputSettings->FindDeviceKeyMappings(InItem->DeviceIdentifier))
+								if (const FJoystickDeviceKeyMapping* KeyMapping = InputSettings->FindDeviceKeyMappings(*InItem.Get()))
 								{
 									const UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
 									FText DeviceName = FText::Format(LOCTEXT("DeviceNameWithConnectionStatusFormat", "{0}{1}"),
 										FText::FromString(KeyMapping->DeviceName),
-										InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(InItem->DeviceIdentifier)
+										InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(*InItem.Get())
 											? LOCTEXT("DeviceLabel", ": Connected")
 											: FText::GetEmpty());
 
@@ -332,7 +332,7 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 									.Text(FText::FromString("ERROR: Invalid Key Mapping"))
 									.TextStyle(FAppStyle::Get(), "NormalText");
 							})
-						.OnSelectionChanged_Lambda([this](const TSharedPtr<FKeyMappingDeviceIdentifier>& NewSelection, ESelectInfo::Type)
+						.OnSelectionChanged_Lambda([this](const TSharedPtr<FJoystickDeviceIdentifier>& NewSelection, ESelectInfo::Type)
 							{
 								SelectedDeviceIdentifier = NewSelection;
 								DeviceKeyMapping = FJoystickDeviceKeyMapping();
@@ -340,7 +340,7 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 								{
 									if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
 									{
-										if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(SelectedDeviceIdentifier->DeviceIdentifier))
+										if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(*SelectedDeviceIdentifier.Get()))
 											DeviceKeyMapping = *FoundMapping;
 									}
 								}
@@ -363,12 +363,12 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileSelectionSection()
 											return FText::FromString("ERROR: Invalid Settings");
 										}
 
-										if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(SelectedDeviceIdentifier->DeviceIdentifier))
+										if (const FJoystickDeviceKeyMapping* FoundMapping = InputSettings->FindDeviceKeyMappings(*SelectedDeviceIdentifier.Get()))
 										{
 											const UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
 											FText DeviceName = FText::FromString(*FoundMapping->DeviceName);
 
-											if (InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(SelectedDeviceIdentifier->DeviceIdentifier))
+											if (InputSubsystem && InputSubsystem->FindDeviceInfoByIdentifier(*SelectedDeviceIdentifier.Get()))
 											{
 												DeviceName = FText::Format(LOCTEXT("DeviceNameWithConnectionStatusFormat", "{0}{1}"),
 													DeviceName, LOCTEXT("DeviceLabel", ": Connected"));
@@ -410,11 +410,11 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreatePreviewDeviceSelector()
 		.FillWidth(1.0f)
 		.MaxWidth(400.0f)
 		[
-			SAssignNew(PreviewDeviceComboBox, SComboBox<TSharedPtr<FKeyMappingPreviewDevice>>)
+			SAssignNew(PreviewDeviceComboBox, SComboBox<TSharedPtr<FJoystickDeviceInfo>>)
 			.OptionsSource(&PreviewDevices)
-			.OnGenerateWidget_Lambda([this](const TSharedPtr<FKeyMappingPreviewDevice>& InItem)
+			.OnGenerateWidget_Lambda([this](const TSharedPtr<FJoystickDeviceInfo>& InItem)
 				{
-					if (!InItem.IsValid())
+					if (!InItem.IsValid() || !InItem.Get()->IsValid())
 					{
 						return SNew(STextBlock)
 							.Text(FText::FromString("None"))
@@ -422,14 +422,14 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreatePreviewDeviceSelector()
 					}
 
 					return SNew(STextBlock)
-						.Text(GetPreviewDeviceDisplayText(InItem->DeviceInfo))
+						.Text(GetPreviewDeviceDisplayText(*InItem.Get()))
 						.TextStyle(FAppStyle::Get(), "NormalText");
 				})
-			.OnSelectionChanged_Lambda([this](const TSharedPtr<FKeyMappingPreviewDevice>& NewSelection, ESelectInfo::Type)
+			.OnSelectionChanged_Lambda([this](const TSharedPtr<FJoystickDeviceInfo>& NewSelection, ESelectInfo::Type)
 				{
 					SelectedPreviewDevice = NewSelection;
 					SelectedPreviewDeviceId = SelectedPreviewDevice.IsValid()
-						? SelectedPreviewDevice->DeviceInfo.InstanceId
+						? SelectedPreviewDevice->InstanceId
 						: FInputDeviceInstanceId();
 				})
 			.InitiallySelectedItem(SelectedPreviewDevice)
@@ -437,8 +437,8 @@ TSharedRef<SWidget> SDeviceKeyMapping::CreatePreviewDeviceSelector()
 				SNew(STextBlock)
 				.Text_Lambda([this]() -> FText
 					{
-						return SelectedPreviewDevice.IsValid()
-							? GetPreviewDeviceDisplayText(SelectedPreviewDevice->DeviceInfo)
+						return SelectedPreviewDevice.IsValid() && SelectedPreviewDevice.Get()->IsValid()
+							? GetPreviewDeviceDisplayText(*SelectedPreviewDevice.Get())
 							: FText::FromString("None");
 					})
 				.TextStyle(FAppStyle::Get(), "NormalText")
@@ -645,8 +645,8 @@ void SDeviceKeyMapping::ApplyDeviceKeyMapping(const UDeviceInputMappingBase& Inp
 	if (!EditedDeviceIdentifier.IsValid())
 		return;
 
-	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid()
-		? SelectedDeviceIdentifier->DeviceIdentifier
+	const FJoystickDeviceIdentifier PreferredSelection = SelectedDeviceIdentifier.IsValid() && SelectedDeviceIdentifier.Get()->IsValid()
+		? *SelectedDeviceIdentifier.Get()
 		: EditedDeviceIdentifier;
 
 	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
@@ -732,7 +732,7 @@ void SDeviceKeyMapping::RefreshButtonsContainer()
 
 							UButtonInputMapping* ButtonMappingObject = NewObject<UButtonInputMapping>();
 							ButtonMappingObject->Initialize(
-								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								*Self->SelectedDeviceIdentifier.Get(),
 								Self->DeviceKeyMapping,
 								ButtonMapping.Key,
 								ButtonMapping.Value);
@@ -891,7 +891,7 @@ void SDeviceKeyMapping::RefreshAxisContainer()
 
 							UAxisInputMapping* AxisMappingObject = NewObject<UAxisInputMapping>();
 							AxisMappingObject->Initialize(
-								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								*Self->SelectedDeviceIdentifier.Get(),
 								Self->DeviceKeyMapping,
 								AxisMapping.Key,
 								AxisMapping.Value);
@@ -1012,7 +1012,7 @@ void SDeviceKeyMapping::RefreshHatsContainer()
 
 						UHatInputMapping* HatMappingObject = NewObject<UHatInputMapping>();
 						HatMappingObject->Initialize(
-							Self->SelectedDeviceIdentifier->DeviceIdentifier,
+							*Self->SelectedDeviceIdentifier.Get(),
 							Self->DeviceKeyMapping,
 							HatMapping.Key,
 							HatMapping.Value);
@@ -1132,7 +1132,7 @@ void SDeviceKeyMapping::RefreshBallsContainer()
 
 							UBallInputMapping* BallMappingObject = NewObject<UBallInputMapping>();
 							BallMappingObject->Initialize(
-								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								*Self->SelectedDeviceIdentifier.Get(),
 								Self->DeviceKeyMapping,
 								BallMapping.Key,
 								BallMapping.Value);
@@ -1266,7 +1266,7 @@ void SDeviceKeyMapping::RefreshTouchpadContainer()
 
 							UTouchpadInputMapping* TouchpadMappingObject = NewObject<UTouchpadInputMapping>();
 							TouchpadMappingObject->Initialize(
-								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								*Self->SelectedDeviceIdentifier.Get(),
 								Self->DeviceKeyMapping,
 								TouchpadMapping.Key,
 								TouchpadMapping.Value);
@@ -1391,7 +1391,7 @@ void SDeviceKeyMapping::RefreshSensorContainer()
 
 							USensorInputMapping* SensorMappingObject = NewObject<USensorInputMapping>();
 							SensorMappingObject->Initialize(
-								Self->SelectedDeviceIdentifier->DeviceIdentifier,
+								*Self->SelectedDeviceIdentifier.Get(),
 								Self->DeviceKeyMapping,
 								SensorMapping.Key,
 								SensorMapping.Value);
