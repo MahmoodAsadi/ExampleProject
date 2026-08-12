@@ -171,13 +171,22 @@ EDeviceConnectionType FSDLInputUtils::ConvertConnectionType(SDL_JoystickConnecti
 FString FSDLInputUtils::GetDeviceHardwareIdentifierFromGamepadType(const EGamepadType GamepadType, const FString& InDeviceName)
 {
 	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
-	bool bUseDeviceName = InputManagerSettings->GetUseDeviceNameAsHardwareDeviceIdentifier();
+	const bool bUseDeviceName = InputManagerSettings->GetUseDeviceNameAsHardwareDeviceIdentifier();
+	const bool bIgnoreXInput = InputManagerSettings->GetIgnoreXInputDevices();
 
 	switch (GamepadType)
 	{
 	case EGamepadType::Xbox360:
+		if (bIgnoreXInput)
+			return "XInputController";
+		else
+			return "Xbox360";
+
 	case EGamepadType::XboxOne:
-		return "XInputController";
+		if (bIgnoreXInput)
+			return "XInputController";
+		else
+			return "XboxOne";
 
 	case EGamepadType::PS3:
 		return "DualShock3";

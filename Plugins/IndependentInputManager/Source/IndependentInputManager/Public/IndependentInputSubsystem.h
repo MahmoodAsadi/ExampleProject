@@ -73,7 +73,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool PlayTriggerRumble(const FInputDeviceInstanceId& DeviceId, float LeftTrigger, float RightTrigger, float Duration = 0.05f);
 
-	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Force Feedback")
 	bool SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId);
 
 	/**
