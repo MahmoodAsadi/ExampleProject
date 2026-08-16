@@ -277,6 +277,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerResistance(const FInputDeviceIns
 
 	if (!DeviceState->DualSense)
 		return false;
+
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
+		return false;
 	
 	return DeviceState->DualSense->SetAdaptiveTriggerResistance(Trigger, StartPosition, Force);
 #else
@@ -292,6 +295,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerWeapon(const FInputDeviceInstanc
 		return false;
 
 	if (!DeviceState->DualSense)
+		return false;
+
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
 		return false;
 
 	return DeviceState->DualSense->SetAdaptiveTriggerWeapon(Trigger, StartPosition, EndPosition, Strength);
@@ -310,6 +316,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerVibration(const FInputDeviceInst
 	if (!DeviceState->DualSense)
 		return false;
 
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
+		return false;
+
 	return DeviceState->DualSense->SetAdaptiveTriggerVibration(Trigger, Position, Amplitude, Frequency);
 #else
 	return false;
@@ -324,6 +333,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerBow(const FInputDeviceInstanceId
 		return false;
 
 	if (!DeviceState->DualSense)
+		return false;
+
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
 		return false;
 
 	return DeviceState->DualSense->SetAdaptiveTriggerBow(Trigger, StartPosition, EndPosition, Strength, SnapForce);
@@ -342,6 +354,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerGalloping(const FInputDeviceInst
 	if (!DeviceState->DualSense)
 		return false;
 
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
+		return false;
+
 	return DeviceState->DualSense->SetAdaptiveTriggerGalloping(Trigger, StartPosition, EndPosition, FirstFoot, SecondFoot, Frequency);
 #else
 	return false;
@@ -356,6 +371,9 @@ bool FIndependentInputDevice::SetAdaptiveTriggerMachine(const FInputDeviceInstan
 		return false;
 
 	if (!DeviceState->DualSense)
+		return false;
+
+	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
 		return false;
 
 	return DeviceState->DualSense->SetAdaptiveTriggerMachine(Trigger, StartPosition, EndPosition, AmplitudeA, AmplitudeB, Frequency, Period);
@@ -518,17 +536,34 @@ FString FIndependentInputDevice::GetDeviceHardwareDeviceIdentifier(const FJoysti
 
 FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickDeviceInfo& DeviceInfo, const FJoystickDeviceKeyMapping& InKeyMapping)
 {
+	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
 	FJoystickDeviceState State;
 	IPlatformInputDeviceMapper& DeviceMapper = IPlatformInputDeviceMapper::Get();
-	State.PlayerIndex = DeviceInfo.PlayerIndex;
 	State.InputDeviceId = InternalDeviceIdMappings.GetOrCreateDeviceId(DeviceInfo.InstanceId);
-	State.PlatformUserId = DeviceMapper.GetPlatformUserForNewlyConnectedDevice();
+	State.PlatformUserId = InputManagerSettings->GetForceDevicesForSingleUser()
+		? DeviceMapper.GetPrimaryPlatformUser()
+		: DeviceMapper.GetPlatformUserForNewlyConnectedDevice();
+
+	DeviceInfos.Find(DeviceInfo.InstanceId)->InputDeviceId = State.InputDeviceId;
+	DeviceInfos.Find(DeviceInfo.InstanceId)->PlatformUserId = State.PlatformUserId;
 	DeviceMapper.Internal_MapInputDeviceToUser(State.InputDeviceId, State.PlatformUserId, EInputDeviceConnectionState::Connected);
 	State.Buttons.Reserve(InKeyMapping.ButtonMappings.Num());
 	State.Axes.Reserve(InKeyMapping.AxisMappings.Num());
 	State.Balls.Reserve(InKeyMapping.BallMappings.Num());
 	State.Hats.Reserve(InKeyMapping.HatMappings.Num());
 	State.Touchpads.Reserve(InKeyMapping.TouchpadMappings.Num());
+	State.Rumble = InKeyMapping.Rumble;
+	State.TriggerRumble = InKeyMapping.TriggerRumble;
+	State.AdaptiveTriggerEffect = InKeyMapping.AdaptiveTriggerEffect;
+
+	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
+	{
+		if (FJoystickDeviceInfo* MutableDeviceInfo = InputSubsystem->GetMutableDeviceInfo(DeviceInfo.InstanceId))
+		{
+			MutableDeviceInfo->InputDeviceId = State.InputDeviceId;
+			MutableDeviceInfo->PlatformUserId = State.PlatformUserId;
+		}
+	}
 	
 	for (const TPair<int32, FJoystickButtonKeyMapping>& ButtonMapping : InKeyMapping.ButtonMappings)
 	{
@@ -764,8 +799,12 @@ void FIndependentInputDevice::HandleSensorState(TMap<EDeviceSensorType, FSensorS
 void FIndependentInputDevice::HandleForceFeedback(FForceFeedbackState& ForceFeedbackState, const FInputDeviceInstanceId& DeviceId)
 {
 	if (!ForceFeedbackState.bDirty)
-	{
 		return;
+
+	if (const FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId))
+	{
+		if (!DeviceState->Rumble.IsEnabled())
+			return;
 	}
 
 	const float Low = FMath::Max(ForceFeedbackState.LeftLarge, ForceFeedbackState.LeftSmall);

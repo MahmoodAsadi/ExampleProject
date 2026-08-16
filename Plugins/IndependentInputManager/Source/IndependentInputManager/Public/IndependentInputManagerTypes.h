@@ -456,10 +456,6 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceInfo
 	 * Runtime Status
 	 *--------------------------------------------------------------------------*/
 
-	 /** Assigned player index, if any. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
-	int32 PlayerIndex = -1;
-
 	/** Current physical connection type. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
 	EDeviceConnectionType ConnectionType = EDeviceConnectionType::Unknown;
@@ -476,7 +472,14 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceInfo
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
 	int32 BatteryPercent = -1;
 
-	
+	/** Unreal input-device ID assigned while this device is owned by the plugin. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
+	FInputDeviceId InputDeviceId;
+
+	/** Unreal platform user currently associated with InputDeviceId. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
+	FPlatformUserId PlatformUserId;
+
 	bool IsValid() const
 	{
 		return Identifier.IsValid();
@@ -924,6 +927,36 @@ public:
 };
 
 
+/** Support and user-controlled enabled state for an optional device feature. */
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMANAGER_API FJoystickFeatureConfig
+{
+	GENERATED_BODY()
+
+public:
+
+	/** Whether the device reports support for this feature. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mapping)
+	bool bSupports = false;
+
+protected:
+
+	/** Whether the feature is enabled. Unsupported features always remain disabled. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
+	bool bEnabled = false;
+
+public:
+
+	/** Applies the requested enabled state when the feature is supported. */
+	void SetEnabled(bool bInEnabled)
+	{
+		bEnabled = bInEnabled && bSupports;
+	}
+
+	bool IsEnabled() const { return bSupports && bEnabled; }
+};
+
+
 USTRUCT(BlueprintType)
 struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceKeyMapping
 {
@@ -962,16 +995,25 @@ public:
 	TMap<int32, FJoystickAxisKeyMapping> AxisMappings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
-	TMap<int32, FJoystickBallKeyMapping> BallMappings;
+	TMap<int32, FJoystickHatKeyMapping> HatMappings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
-	TMap<int32, FJoystickHatKeyMapping> HatMappings;
+	TMap<int32, FJoystickBallKeyMapping> BallMappings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
 	TMap<int32, FJoystickTouchpadKeyMapping> TouchpadMappings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
 	TMap<EDeviceSensorType, FJoystickSensorKeyMapping> SensorMappings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Settings)
+	FJoystickFeatureConfig Rumble;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Settings)
+	FJoystickFeatureConfig TriggerRumble;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Settings)
+	FJoystickFeatureConfig AdaptiveTriggerEffect;
 
 };
 
@@ -1497,7 +1539,6 @@ public:
 
 	FInputDeviceId InputDeviceId;
 	FPlatformUserId PlatformUserId;
-	int32 PlayerIndex = INDEX_NONE;
 
 	TMap<int32, FButtonState> Buttons;
 	TMap<int32, FAxisState> Axes;
@@ -1506,6 +1547,9 @@ public:
 	TMap<int32, FTouchpadState> Touchpads;
 	TMap<EDeviceSensorType, FSensorState> Sensors;
 	FForceFeedbackState ForceFeedback;
+	FJoystickFeatureConfig Rumble;
+	FJoystickFeatureConfig TriggerRumble;
+	FJoystickFeatureConfig AdaptiveTriggerEffect;
 
 #if PLATFORM_WINDOWS
 	TSharedPtr<FDualSenseWindows> DualSense;
@@ -1548,6 +1592,10 @@ public:
 		DevicesIdentifierMap.Add(FName(TEXT("XInputController")));
 		DevicesIdentifierMap.Add(FName(TEXT("MobileTouch")));
 		DevicesIdentifierMap.Add(FName(TEXT("Gamepad")));
+		DevicesIdentifierMap.Add(FName(TEXT("Xbox360")));
+		DevicesIdentifierMap.Add(FName(TEXT("XboxOne")));
+		DevicesIdentifierMap.Add(FName(TEXT("DualShock4")));
+		DevicesIdentifierMap.Add(FName(TEXT("DualSense")));
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Info")

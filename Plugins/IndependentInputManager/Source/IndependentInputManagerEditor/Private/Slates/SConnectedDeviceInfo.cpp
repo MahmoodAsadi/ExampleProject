@@ -849,16 +849,30 @@ TSharedRef<SWidget> SConnectedDeviceInfo::CreateDeviceStatusSection()
 						}))
 			]
 
-			// Player Index
+			// Input Device ID
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.0f, 2.0f)
 			[
-				CreatePropertyRow(LOCTEXT("PlayerIndexLabel", "Player Index:"),
+				CreatePropertyRow(LOCTEXT("InputDeviceIdLabel", "Input DeviceId:"),
 					TAttribute<FText>::CreateLambda([this, NumberFormat]
 						{
 							return DeviceInfo.IsValid()
-								? FText::AsNumber(DeviceInfo.PlayerIndex, &NumberFormat)
+								? FText::AsNumber(DeviceInfo.InputDeviceId.GetId(), &NumberFormat)
+								: LOCTEXT("NA", "N/A");
+						}))
+			]
+
+			// Platform User ID
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(0.0f, 2.0f)
+			[
+				CreatePropertyRow(LOCTEXT("PlatformUserIdLabel", "Platform UserId:"),
+					TAttribute<FText>::CreateLambda([this, NumberFormat]
+						{
+							return DeviceInfo.IsValid()
+								? FText::AsNumber(DeviceInfo.PlatformUserId.GetInternalId(), &NumberFormat)
 								: LOCTEXT("NA", "N/A");
 						}))
 			]

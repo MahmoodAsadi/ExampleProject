@@ -191,7 +191,7 @@ bool FDualSenseTriggerEffectGenerator::Galloping(uint8 Out[11], uint8 StartPosit
 
 bool FDualSenseTriggerEffectGenerator::Machine(uint8 Out[11], uint8 StartPosition, uint8 EndPosition, uint8 AmplitudeA, uint8 AmplitudeB, uint8 Frequency, uint8 Period)
 {
-	StartPosition = FMath::Clamp<uint8>(StartPosition, 0, 8);
+	StartPosition = FMath::Clamp<uint8>(StartPosition, 1, 8);
 	EndPosition = FMath::Clamp<uint8>(EndPosition, StartPosition + 1, 9);
 
 	AmplitudeA = FMath::Clamp<uint8>(AmplitudeA, 0, 7);

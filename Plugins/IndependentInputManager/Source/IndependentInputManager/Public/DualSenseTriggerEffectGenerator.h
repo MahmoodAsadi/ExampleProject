@@ -85,7 +85,7 @@ public:
      * Unofficial "Machine" effect (opcode 0x27, not guaranteed to survive future firmware).
      * Resembles Vibration, but oscillates between two amplitudes.
      * @param Out            Receives the 11-byte adaptive-trigger effect payload.
-     * @param StartPosition  Starting zone. Clamped to 0-8.
+     * @param StartPosition  Starting zone. Clamped to 1-8.
      * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 9.
      * @param AmplitudeA     Primary cycling strength. Clamped to 0-7.
      * @param AmplitudeB     Secondary cycling strength. Clamped to 0-7.

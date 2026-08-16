@@ -46,13 +46,16 @@ public:
 
 	const TMap<FInputDeviceInstanceId, FJoystickDeviceInfo>& GetConnectedDevices() const { return ConnectedDevices; }
 
-	// Find DeviceInfo for DeviceId
+	/** Returns the connected device metadata for DeviceId, or nullptr if it is unavailable. */
 	const FJoystickDeviceInfo* GetDeviceInfo(const FInputDeviceInstanceId& DeviceId) const;
 
-	// Find DevinceInfo for DeviceId
+	/** Returns mutable connected-device metadata for DeviceId, or nullptr if it is unavailable. */
+	FJoystickDeviceInfo* GetMutableDeviceInfo(const FInputDeviceInstanceId& DeviceId);
+
+	/** Returns the SDL device handles for DeviceId, or nullptr if they are unavailable. */
 	const FSDLJoystickDevice* GetSDLDeviceInfo(const FInputDeviceInstanceId& DeviceId) const;
 
-	// Find first connected DeviceInfo for DeviceIdentifier
+	/** Returns the first connected device matching DeviceIdentifier, or nullptr if none matches. */
 	const FJoystickDeviceInfo* FindDeviceInfoByIdentifier(const FJoystickDeviceIdentifier& DeviceIdentifier) const;
 
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
@@ -62,10 +65,18 @@ public:
 	int32 GetConnectedDeviceCount() const { return ConnectedDevices.Num(); }
 	
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
-	static FRotator CalculateOrientationFromAccelerometer(const FVector& Accelerometer);
-
-	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	TArray<FJoystickDeviceInfo> GetConnectedDevicesInfo() const;
+
+	/** Finds the connected SDL instance ID assigned to InputDeviceId. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool FindDeviceInstanceIdForInputDevice(const FInputDeviceId InputDeviceId, FInputDeviceInstanceId& OutInstanceId) const;
+
+	/**
+	 * Finds the first connected SDL instance ID assigned to PlatformUserId.
+	 * Multiple devices can match when they are assigned to the same platform user.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool FindDeviceInstanceIdForPlaformUser(const FPlatformUserId PlatformUserId, FInputDeviceInstanceId& OutInstanceId) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool PlayRumble(const FInputDeviceInstanceId& DeviceId, float LowFrequency, float HighFrequency, float Duration = 0.05f);
@@ -73,8 +84,44 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool PlayTriggerRumble(const FInputDeviceInstanceId& DeviceId, float LeftTrigger, float RightTrigger, float Duration = 0.05f);
 
+	/** Returns whether the connected device supports rumble. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Force Feedback")
-	bool SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId);
+	bool SupportsRumble(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Returns whether the connected device supports trigger rumble. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Force Feedback")
+	bool SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId) const;
+
+	/**
+	 * Returns whether the connected device supports adaptive-trigger effects.
+	 * This currently requires a DualSense controller on Windows.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Force Feedback")
+	bool SupportsAddaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Returns the effective mapping for DeviceId, or a default mapping if none exists. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	FJoystickDeviceKeyMapping GetJoystickDeviceKeyMapping(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Finds a button mapping by its hardware button index. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool GetDeviceButtonMapping(const FInputDeviceInstanceId& DeviceId, int32 ButtonIndex, FJoystickButtonKeyMapping& OutButtonMapping) const;
+
+	/** Finds an axis mapping by its hardware axis index. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool GetDeviceAxisMapping(const FInputDeviceInstanceId& DeviceId, int32 AxisIndex, FJoystickAxisKeyMapping& OutAxisMapping) const;
+
+	/** Finds a hat mapping by its hardware hat index. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool GetDeviceHatMapping(const FInputDeviceInstanceId& DeviceId, int32 HatIndex, FJoystickHatKeyMapping& OutHatMapping) const;
+
+	/** Finds a ball mapping by its hardware ball index. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool GetDeviceBallMapping(const FInputDeviceInstanceId& DeviceId, int32 BallIndex, FJoystickBallKeyMapping& OutBallMapping) const;
+
+	/** Finds a touchpad mapping by its hardware touchpad index. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool GetDeviceTouchpadMapping(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, FJoystickTouchpadKeyMapping& OutTouchpadMapping) const;
 
 	/**
 	 * The trigger resists movement beyond StartPosition
@@ -142,7 +189,7 @@ public:
 	 * Resembles Vibration, but oscillates between two amplitudes.
 	 * @param DeviceId       Device that receives the effect.
 	 * @param Trigger        Left or right adaptive trigger.
-	 * @param StartPosition  Starting zone. Clamped to 0-8.
+	 * @param StartPosition  Starting zone. Clamped to 1-8.
 	 * @param EndPosition    Ending zone. Clamped to StartPosition+1 through 9.
 	 * @param AmplitudeA     Primary cycling strength. Clamped to 0-7.
 	 * @param AmplitudeB     Secondary cycling strength. Clamped to 0-7.
@@ -160,7 +207,78 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem|Force Feedback")
 	bool ClearAdaptiveTriggerEffect(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger);
 
-	/** Reconnects all connected devices matching the identifier to rebuild their runtime state using the latest device mapping. */
+	/** Returns every sensor reported by the connected device. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	TArray<EDeviceSensorType> GetSupportedSensors(const FInputDeviceInstanceId& DeviceId);
+
+	/** Returns every optional SDL feature reported by the connected device. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	TArray<EJoystickProperties> GetSupportedFeatures(const FInputDeviceInstanceId& DeviceId);
+
+	/** Returns whether a sensor is enabled in the connected device's profile. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetSensorEnabled(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor) const;
+
+	/**
+	 * Enables or disables a sensor in the connected device's profile. All
+	 * connected devices sharing that profile are reconnected when it changes.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	bool SetSensorEnable(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor, bool bEnable);
+
+	/**
+	 * Enables or disables a sensor in every profile that contains it. Connected
+	 * devices using an updated profile are reconnected.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	void SetSensorEnableForAllDevices(EDeviceSensorType Sensor, bool bEnable);
+
+	/** Returns whether the connected device's profile reports rumble support. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetRumbleSupported(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Returns whether rumble is enabled in the connected device's profile. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Returns whether the connected device's profile reports trigger-rumble support. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetTriggerRumbleSupported(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Returns whether trigger rumble is enabled in the connected device's profile. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetTriggerRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const;
+
+	/** Enables or disables rumble in the connected device's profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	bool SetRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable);
+
+	/** Enables or disables trigger rumble in the connected device's profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	bool SetTriggerRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable);
+
+	/** Enables or disables adaptive-trigger effects in the connected device's profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	bool SetAdaptiveTriggerEffectsEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable);
+
+	/** Enables or disables rumble for every device profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	void SetRumbleEnableForAllDevices(bool bEnable);
+
+	/** Enables or disables trigger rumble for every device profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	void SetTriggerRumbleEnableForAllDevices(bool bEnable);
+
+	/** Enables or disables adaptive-trigger effects for every device profile. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	void SetAdaptiveTriggerEffectsEnableForAllDevices(bool bEnable);
+
+	/**
+	 * Reopens all connected devices matching DeviceIdentifier and rebuilds their
+	 * runtime state from the latest profile. This internal reconnect keeps the
+	 * SDL instance ID assigned to the current physical connection.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
 	void ReconnectDevice(const FJoystickDeviceIdentifier& DeviceIdentifier);
 
 private:

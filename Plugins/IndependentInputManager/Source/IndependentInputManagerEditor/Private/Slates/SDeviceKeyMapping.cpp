@@ -453,8 +453,8 @@ FInputDeviceInstanceId SDeviceKeyMapping::GetSelectedPreviewDeviceId() const
 
 FText SDeviceKeyMapping::GetPreviewDeviceDisplayText(const FJoystickDeviceInfo& DeviceInfo) const
 {
-	const FText PlayerIndex = DeviceInfo.PlayerIndex >= 0
-		? FText::AsNumber(DeviceInfo.PlayerIndex)
+	const FText PlayerIndex = DeviceInfo.InputDeviceId.GetId() >= 0
+		? FText::AsNumber(DeviceInfo.InputDeviceId.GetId())
 		: LOCTEXT("PreviewDeviceUnassignedPlayer", "Unassigned");
 
 	return FText::Format(LOCTEXT("PreviewDeviceDisplayFormat", "{0} - Instance {1} - Player {2}"),
