@@ -8,7 +8,6 @@
 #endif
 #include "IndependentInputManager.h"
 #include "IndependentInputManagerSettings.h"
-#include "IndependentInputSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "FIndependentInputDevice"
 
@@ -133,7 +132,7 @@ void FIndependentInputDevice::SetChannelValues(int ControllerId, const FForceFee
 	}
 }
 
-void FIndependentInputDevice::DevicePluggedIn(const FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, const FJoystickDeviceKeyMapping& DeviceMapping)
+void FIndependentInputDevice::DevicePluggedIn(FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, const FJoystickDeviceKeyMapping& DeviceMapping)
 {
 	if (!DeviceInfo.IsValid())
 		return;
@@ -141,11 +140,10 @@ void FIndependentInputDevice::DevicePluggedIn(const FJoystickDeviceInfo& DeviceI
 	if (!DeviceMapping.bUseIndependentInputAPI)
 		return;
 
+	FJoystickDeviceState NewState = CreateDeviceState(DeviceInfo, DeviceMapping);
 	DeviceInfos.Add(DeviceInfo.InstanceId, DeviceInfo);
 	SDLDevices.Add(DeviceInfo.InstanceId, SDLDevice);
-
 	DeviceMappings.Add(DeviceInfo.InstanceId, DeviceMapping);
-	FJoystickDeviceState NewState = CreateDeviceState(DeviceInfo, DeviceMapping);
 
 #if PLATFORM_WINDOWS
 	if (SDLDevice.bIsDualSense)
@@ -534,18 +532,18 @@ FString FIndependentInputDevice::GetDeviceHardwareDeviceIdentifier(const FJoysti
 	}
 }
 
-FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickDeviceInfo& DeviceInfo, const FJoystickDeviceKeyMapping& InKeyMapping)
+FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(FJoystickDeviceInfo& DeviceInfo, const FJoystickDeviceKeyMapping& InKeyMapping)
 {
 	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
 	FJoystickDeviceState State;
 	IPlatformInputDeviceMapper& DeviceMapper = IPlatformInputDeviceMapper::Get();
-	State.InputDeviceId = InternalDeviceIdMappings.GetOrCreateDeviceId(DeviceInfo.InstanceId);
-	State.PlatformUserId = InputManagerSettings->GetForceDevicesForSingleUser()
+	DeviceInfo.InputDeviceId = InternalDeviceIdMappings.GetOrCreateDeviceId(DeviceInfo.InstanceId);
+	DeviceInfo.PlatformUserId = InputManagerSettings->GetForceDevicesForSingleUser()
 		? DeviceMapper.GetPrimaryPlatformUser()
 		: DeviceMapper.GetPlatformUserForNewlyConnectedDevice();
 
-	DeviceInfos.Find(DeviceInfo.InstanceId)->InputDeviceId = State.InputDeviceId;
-	DeviceInfos.Find(DeviceInfo.InstanceId)->PlatformUserId = State.PlatformUserId;
+	State.InputDeviceId = DeviceInfo.InputDeviceId;
+	State.PlatformUserId = DeviceInfo.PlatformUserId;
 	DeviceMapper.Internal_MapInputDeviceToUser(State.InputDeviceId, State.PlatformUserId, EInputDeviceConnectionState::Connected);
 	State.Buttons.Reserve(InKeyMapping.ButtonMappings.Num());
 	State.Axes.Reserve(InKeyMapping.AxisMappings.Num());
@@ -556,15 +554,6 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(const FJoystickD
 	State.TriggerRumble = InKeyMapping.TriggerRumble;
 	State.AdaptiveTriggerEffect = InKeyMapping.AdaptiveTriggerEffect;
 
-	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
-	{
-		if (FJoystickDeviceInfo* MutableDeviceInfo = InputSubsystem->GetMutableDeviceInfo(DeviceInfo.InstanceId))
-		{
-			MutableDeviceInfo->InputDeviceId = State.InputDeviceId;
-			MutableDeviceInfo->PlatformUserId = State.PlatformUserId;
-		}
-	}
-	
 	for (const TPair<int32, FJoystickButtonKeyMapping>& ButtonMapping : InKeyMapping.ButtonMappings)
 	{
 		State.Buttons.Add(ButtonMapping.Key, FButtonState(ButtonMapping.Value.Key.GetKey()));

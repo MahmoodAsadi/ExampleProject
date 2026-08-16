@@ -1156,6 +1156,9 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	bool bCreatedNewDeviceMapping = false;
 	CreateKeyMappingIfMissing(DeviceInfo, SDLDevice, bCreatedNewDeviceMapping);
 
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+		IndependentInputDevice->DevicePluggedIn(DeviceInfo, SDLDevice, *DeviceMapping);
+
 	ConnectedDevices.Add(DeviceId, DeviceInfo);
 	SDLDevices.Add(DeviceId, SDLDevice);
 
@@ -1189,9 +1192,6 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	UE_LOG(LogIndependentInput, Log, TEXT("\tBattery State: %s"), *UEnum::GetDisplayValueAsText(DeviceInfo.BatteryState).ToString());
 
 	UIndependentInputManagerSettings::GetMutable()->DevicePluggedIn(DeviceInfo);
-	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
-		IndependentInputDevice->DevicePluggedIn(DeviceInfo, SDLDevice, *DeviceMapping);
-
 	OnDevicePluggedIn.Broadcast(DeviceInfo, SDLDevice);
 
 #if WITH_EDITORONLY_DATA
