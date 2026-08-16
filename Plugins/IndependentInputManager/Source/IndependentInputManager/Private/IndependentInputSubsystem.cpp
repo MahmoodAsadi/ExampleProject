@@ -214,6 +214,10 @@ TArray<FJoystickDeviceInfo> UIndependentInputSubsystem::GetConnectedDevicesInfo(
 
 bool UIndependentInputSubsystem::FindDeviceInstanceIdForInputDevice(const FInputDeviceId InputDeviceId, FInputDeviceInstanceId& OutInstanceId) const
 {
+	OutInstanceId = FInputDeviceInstanceId();
+	if (!InputDeviceId.IsValid())
+		return false;
+
 	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& ConnectedDevice : ConnectedDevices)
 	{
 		if (ConnectedDevice.Value.InputDeviceId == InputDeviceId)
@@ -226,18 +230,21 @@ bool UIndependentInputSubsystem::FindDeviceInstanceIdForInputDevice(const FInput
 	return false;
 }
 
-bool UIndependentInputSubsystem::FindDeviceInstanceIdForPlaformUser(const FPlatformUserId PlatformUserId, FInputDeviceInstanceId& OutInstanceId) const
+bool UIndependentInputSubsystem::FindDeviceInstanceIdsForPlaformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const
 {
+	OutInstanceIds.Empty();
+	if (!PlatformUserId.IsValid())
+		return false;
+
 	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& ConnectedDevice : ConnectedDevices)
 	{
 		if (ConnectedDevice.Value.PlatformUserId == PlatformUserId)
 		{
-			OutInstanceId = ConnectedDevice.Key;
-			return true;
+			OutInstanceIds.AddUnique(ConnectedDevice.Key);
 		}
 	}
 
-	return false;
+	return OutInstanceIds.Num() > 0;
 }
 
 bool UIndependentInputSubsystem::SupportsRumble(const FInputDeviceInstanceId& DeviceId) const

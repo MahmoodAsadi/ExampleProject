@@ -72,11 +72,10 @@ public:
 	bool FindDeviceInstanceIdForInputDevice(const FInputDeviceId InputDeviceId, FInputDeviceInstanceId& OutInstanceId) const;
 
 	/**
-	 * Finds the first connected SDL instance ID assigned to PlatformUserId.
-	 * Multiple devices can match when they are assigned to the same platform user.
+	 * Finds all connected SDL instance IDs assigned to PlatformUserId.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
-	bool FindDeviceInstanceIdForPlaformUser(const FPlatformUserId PlatformUserId, FInputDeviceInstanceId& OutInstanceId) const;
+	bool FindDeviceInstanceIdsForPlaformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const;
 
 
 	/** Returns whether the connected device supports rumble. */
