@@ -283,19 +283,23 @@ void UIndependentInputSubsystem::SetRumbleEnableForAllDevices(bool bEnable)
 
 bool UIndependentInputSubsystem::PlayRumble(const FInputDeviceInstanceId& DeviceId, float LowFrequency, float HighFrequency, float Duration/* = 0.05f*/)
 {
-	if (!SupportsRumble(DeviceId))
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
 	{
-		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Device does not supports Rumble."), DeviceId.GetId());
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Device is not owned by Independent Input Manager."), DeviceId.GetId());
 		return false;
 	}
 
-	if (const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId))
+	if (!SupportsRumble(DeviceId))
 	{
-		if (DeviceKeyMapping && !DeviceKeyMapping->Rumble.IsEnabled())
-		{
-			UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Rumble is diabled in device key mapping."), DeviceId.GetId());
-			return false;
-		}
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Device does not support rumble."), DeviceId.GetId());
+		return false;
+	}
+
+	if (!DeviceKeyMapping->Rumble.IsEnabled())
+	{
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Rumble is disabled in device key mapping."), DeviceId.GetId());
+		return false;
 	}
 
 	if (Duration <= 0.0f)
@@ -372,19 +376,23 @@ void UIndependentInputSubsystem::SetTriggerRumbleEnableForAllDevices(bool bEnabl
 
 bool UIndependentInputSubsystem::PlayTriggerRumble(const FInputDeviceInstanceId& DeviceId, float LeftTrigger, float RightTrigger, float Duration)
 {
-	if (!SupportsTriggerRumble(DeviceId))
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
 	{
-		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Device does not supports Trigger Rumble."), DeviceId.GetId());
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start trigger rumble for device %d: Device is not owned by Independent Input Manager."), DeviceId.GetId());
 		return false;
 	}
 
-	if (const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId))
+	if (!SupportsTriggerRumble(DeviceId))
 	{
-		if (DeviceKeyMapping && !DeviceKeyMapping->TriggerRumble.IsEnabled())
-		{
-			UE_LOG(LogIndependentInput, Log, TEXT("Failed to start rumble for device %d: Rumble is diabled in device key mapping."), DeviceId.GetId());
-			return false;
-		}
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start trigger rumble for device %d: Device does not support trigger rumble."), DeviceId.GetId());
+		return false;
+	}
+
+	if (!DeviceKeyMapping->TriggerRumble.IsEnabled())
+	{
+		UE_LOG(LogIndependentInput, Log, TEXT("Failed to start trigger rumble for device %d: Trigger rumble is disabled in device key mapping."), DeviceId.GetId());
+		return false;
 	}
 
 	if (Duration <= 0.0f)
