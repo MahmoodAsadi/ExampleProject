@@ -86,6 +86,65 @@ namespace
 		return FKey(FName(*(DeviceKeyMapping.MappingId.ToString() + Key.GetKeyName().ToString())));
 	}
 
+	bool IsCompletePair(
+		const FJoystickDeviceKeyMapping& DeviceKeyMapping,
+		const FIndependentInputKey& KeyX,
+		const FIndependentInputKey& KeyY)
+	{
+		return GetMappedRuntimeKey(DeviceKeyMapping, KeyX).IsValid()
+			&& GetMappedRuntimeKey(DeviceKeyMapping, KeyY).IsValid();
+	}
+
+	bool IsPairRegistered(
+		const FJoystickDeviceKeyMapping& DeviceKeyMapping,
+		const FIndependentInputKey& KeyX,
+		const FIndependentInputKey& KeyY)
+	{
+		if (!IsCompletePair(DeviceKeyMapping, KeyX, KeyY))
+			return false;
+
+		FString PairedKeyName;
+		FString PairedKeyDisplayName;
+		GetPairedKeyNames(KeyX, PairedKeyName, PairedKeyDisplayName);
+		const FKey PairedKey(FName(*(DeviceKeyMapping.MappingId.ToString() + PairedKeyName)));
+		return EKeys::GetPairedKeyDetails(PairedKey) != nullptr;
+	}
+
+	bool HasRegisteredPairMadeIncomplete(
+		const FJoystickDeviceKeyMapping& PreviousMapping,
+		const FJoystickDeviceKeyMapping& EditedMapping)
+	{
+		for (const TPair<int32, FJoystickBallKeyMapping>& PreviousBall : PreviousMapping.BallMappings)
+		{
+			if (!IsPairRegistered(PreviousMapping, PreviousBall.Value.X.Key, PreviousBall.Value.Y.Key))
+				continue;
+
+			const FJoystickBallKeyMapping* EditedBall = EditedMapping.BallMappings.Find(PreviousBall.Key);
+			if (!EditedBall || !IsCompletePair(EditedMapping, EditedBall->X.Key, EditedBall->Y.Key))
+				return true;
+		}
+
+		for (const TPair<int32, FJoystickTouchpadKeyMapping>& PreviousTouchpad : PreviousMapping.TouchpadMappings)
+		{
+			const FJoystickTouchpadKeyMapping* EditedTouchpad = EditedMapping.TouchpadMappings.Find(PreviousTouchpad.Key);
+			for (int32 FingerIndex = 0; FingerIndex < PreviousTouchpad.Value.Fingers.Num(); ++FingerIndex)
+			{
+				const FJoystickTouchpadFingerKeyMapping& PreviousFinger = PreviousTouchpad.Value.Fingers[FingerIndex];
+				if (!IsPairRegistered(PreviousMapping, PreviousFinger.PositionX, PreviousFinger.PositionY))
+					continue;
+
+				if (!EditedTouchpad || !EditedTouchpad->Fingers.IsValidIndex(FingerIndex))
+					return true;
+
+				const FJoystickTouchpadFingerKeyMapping& EditedFinger = EditedTouchpad->Fingers[FingerIndex];
+				if (!IsCompletePair(EditedMapping, EditedFinger.PositionX, EditedFinger.PositionY))
+					return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool ValidateRelativeBallKey(
 		const FJoystickDeviceIdentifier& DeviceIdentifier,
 		const FKey& RuntimeKey,
@@ -483,6 +542,11 @@ namespace
 				return false;
 			}
 
+			const FKey RuntimeKeyX = GetMappedRuntimeKey(DeviceKeyMapping, BallMapping.X.Key);
+			const FKey RuntimeKeyY = GetMappedRuntimeKey(DeviceKeyMapping, BallMapping.Y.Key);
+			if (!RuntimeKeyX.IsValid() || !RuntimeKeyY.IsValid())
+				continue;
+
 			FString PairedKeyName;
 			FString PairedKeyDisplayName;
 			GetPairedKeyNames(BallMapping.X.Key, PairedKeyName, PairedKeyDisplayName);
@@ -607,6 +671,11 @@ namespace
 					return false;
 				}
 
+				const FKey RuntimeKeyX = GetMappedRuntimeKey(DeviceKeyMapping, Finger.PositionX);
+				const FKey RuntimeKeyY = GetMappedRuntimeKey(DeviceKeyMapping, Finger.PositionY);
+				if (!RuntimeKeyX.IsValid() || !RuntimeKeyY.IsValid())
+					continue;
+
 				FString PairedKeyName;
 				FString PairedKeyDisplayName;
 				GetPairedKeyNames(Finger.PositionX, PairedKeyName, PairedKeyDisplayName);
@@ -696,6 +765,13 @@ bool UDeviceInputMappingBase::ValidateMapping(FText& OutValidationError) const
 		EditedDeviceIdentifier,
 		EditedDeviceKeyMapping,
 		OutValidationError);
+}
+
+bool UDeviceInputMappingBase::RequiresRestartToApplyMapping() const
+{
+	FJoystickDeviceKeyMapping EditedDeviceKeyMapping = DeviceKeyMappingSnapshot;
+	ApplyEditedMapping(EditedDeviceKeyMapping);
+	return HasRegisteredPairMadeIncomplete(DeviceKeyMappingSnapshot, EditedDeviceKeyMapping);
 }
 
 bool UDeviceInputMappingBase::BuildValidatedDeviceKeyMapping(

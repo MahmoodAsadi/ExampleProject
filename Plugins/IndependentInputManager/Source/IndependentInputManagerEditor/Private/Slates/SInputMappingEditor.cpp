@@ -75,6 +75,7 @@ void SInputMappingEditor::Construct(const FArguments& InArgs)
 					.Text(FText::FromString("Save"))
 					.OnClicked_Lambda([this]
 						{
+							bool bRequiresRestart = false;
 							if (const UDeviceInputMappingBase* InputMapping =
 								Cast<UDeviceInputMappingBase>(ObjectToModify.Get()))
 							{
@@ -88,6 +89,21 @@ void SInputMappingEditor::Construct(const FArguments& InArgs)
 										LOCTEXT("InvalidInputKeyTitle", "Invalid Input Key"));
 									return FReply::Handled();
 								}
+
+								bRequiresRestart = InputMapping->RequiresRestartToApplyMapping();
+							}
+
+							if (bRequiresRestart)
+							{
+								FMessageDialog::Open(
+									EAppMsgCategory::Warning,
+									EAppMsgType::Ok,
+									LOCTEXT(
+										"PairedKeyRestartWarning",
+										"This mapping will be saved, but Unreal cannot remove an already registered "
+										"Axis2D pairing while the editor is running. Restart the editor to fully apply "
+										"the unassigned X/Y mapping."),
+									LOCTEXT("PairedKeyRestartTitle", "Editor Restart Required"));
 							}
 
 							OnSave.ExecuteIfBound(ObjectToModify.Get());

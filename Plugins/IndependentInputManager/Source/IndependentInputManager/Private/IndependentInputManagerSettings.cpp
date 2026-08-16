@@ -421,7 +421,7 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 		BallMapping.Value.X.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
 		BallMapping.Value.Y.Key.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping, true);
 
-		if (InputSubsystem)
+		if (InputSubsystem && BallMapping.Value.X.Key.GetKey().IsValid() && BallMapping.Value.Y.Key.GetKey().IsValid())
 			InputSubsystem->CreateDevicePairedKey(DeviceKeyMapping, BallMapping.Value.X.Key, BallMapping.Value.Y.Key, true);
 	}
 
@@ -446,7 +446,7 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 			Finger.PositionX.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 			Finger.PositionY.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 
-			if (InputSubsystem)
+			if (InputSubsystem && Finger.PositionX.GetKey().IsValid() && Finger.PositionY.GetKey().IsValid())
 				InputSubsystem->CreateDevicePairedKey(DeviceKeyMapping, Finger.PositionX, Finger.PositionY);
 
 			Finger.Pressure.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);

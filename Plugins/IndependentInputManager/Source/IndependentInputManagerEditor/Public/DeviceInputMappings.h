@@ -25,6 +25,7 @@ public:
 		FJoystickDeviceKeyMapping& OutDeviceKeyMapping,
 		FText& OutValidationError) const;
 	bool ValidateMapping(FText& OutValidationError) const;
+	bool RequiresRestartToApplyMapping() const;
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 

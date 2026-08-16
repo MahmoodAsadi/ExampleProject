@@ -109,6 +109,20 @@ FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping
 
 FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyMapping& DeviceMapping, const FIndependentInputKey& KeyX, const FIndependentInputKey& KeyY, bool bUpdateAxisWithoutSamples)
 {
+	const FKey RuntimeKeyX = KeyX.GetKey();
+	const FKey RuntimeKeyY = KeyY.GetKey();
+	const TSharedPtr<FKeyDetails> KeyXDetails = EKeys::GetKeyDetails(RuntimeKeyX);
+	const TSharedPtr<FKeyDetails> KeyYDetails = EKeys::GetKeyDetails(RuntimeKeyY);
+	if (!RuntimeKeyX.IsValid()
+		|| !RuntimeKeyY.IsValid()
+		|| !KeyXDetails
+		|| !KeyYDetails
+		|| !KeyXDetails->IsAxis1D()
+		|| !KeyYDetails->IsAxis1D())
+	{
+		return FKey();
+	}
+
 	const FString& DeviceName = DeviceMapping.DeviceName;
 	const FString& MappingId = DeviceMapping.MappingId.ToString();
 	FString PairedKeyDisplayName = KeyX.GetKeyDisplayName();
@@ -162,7 +176,7 @@ FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyM
 			KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
 
 		FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(PairedKeyDisplayName), KeyFlags, CategoryName);
-		EKeys::AddPairedKey(NewKeyDetails, KeyX.GetKey(), KeyY.GetKey());
+		EKeys::AddPairedKey(NewKeyDetails, RuntimeKeyX, RuntimeKeyY);
 	}
 	
 	return NewKey;
