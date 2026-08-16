@@ -835,43 +835,43 @@ TSharedRef<SWidget> SConnectedDeviceInfo::CreateDeviceStatusSection()
 		[
 			SNew(SVerticalBox)
 
-			// Instance ID
+			// SDL Instance ID
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.0f, 2.0f)
 			[
-				CreatePropertyRow(LOCTEXT("InstanceIDLabel", "Instance ID:"),
+				CreatePropertyRow(LOCTEXT("InstanceIDLabel", "SDL Instance ID:"),
 					TAttribute<FText>::CreateLambda([this, NumberFormat]
 						{
-							return DeviceInfo.IsValid()
+							return DeviceInfo.InstanceId.IsValid()
 								? FText::AsNumber(DeviceInfo.InstanceId.GetId(), &NumberFormat)
 								: LOCTEXT("NA", "N/A");
 						}))
 			]
 
-			// Input Device ID
+			// Unreal Input Device ID
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.0f, 2.0f)
 			[
-				CreatePropertyRow(LOCTEXT("InputDeviceIdLabel", "Input DeviceId:"),
+				CreatePropertyRow(LOCTEXT("InputDeviceIdLabel", "Unreal Input Device ID:"),
 					TAttribute<FText>::CreateLambda([this, NumberFormat]
 						{
-							return DeviceInfo.IsValid()
+							return DeviceInfo.InputDeviceId.IsValid()
 								? FText::AsNumber(DeviceInfo.InputDeviceId.GetId(), &NumberFormat)
 								: LOCTEXT("NA", "N/A");
 						}))
 			]
 
-			// Platform User ID
+			// Unreal Platform User ID
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(0.0f, 2.0f)
 			[
-				CreatePropertyRow(LOCTEXT("PlatformUserIdLabel", "Platform UserId:"),
+				CreatePropertyRow(LOCTEXT("PlatformUserIdLabel", "Unreal Platform User ID:"),
 					TAttribute<FText>::CreateLambda([this, NumberFormat]
 						{
-							return DeviceInfo.IsValid()
+							return DeviceInfo.PlatformUserId.IsValid()
 								? FText::AsNumber(DeviceInfo.PlatformUserId.GetInternalId(), &NumberFormat)
 								: LOCTEXT("NA", "N/A");
 						}))

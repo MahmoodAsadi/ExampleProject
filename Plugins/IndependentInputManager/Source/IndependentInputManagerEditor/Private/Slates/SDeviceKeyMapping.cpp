@@ -453,14 +453,18 @@ FInputDeviceInstanceId SDeviceKeyMapping::GetSelectedPreviewDeviceId() const
 
 FText SDeviceKeyMapping::GetPreviewDeviceDisplayText(const FJoystickDeviceInfo& DeviceInfo) const
 {
-	const FText PlayerIndex = DeviceInfo.InputDeviceId.GetId() >= 0
+	const FText InputDeviceId = DeviceInfo.InputDeviceId.IsValid()
 		? FText::AsNumber(DeviceInfo.InputDeviceId.GetId())
-		: LOCTEXT("PreviewDeviceUnassignedPlayer", "Unassigned");
+		: LOCTEXT("PreviewDeviceUnassignedInputDevice", "N/A");
+	const FText PlatformUserId = DeviceInfo.PlatformUserId.IsValid()
+		? FText::AsNumber(DeviceInfo.PlatformUserId.GetInternalId())
+		: LOCTEXT("PreviewDeviceUnassignedPlatformUser", "N/A");
 
-	return FText::Format(LOCTEXT("PreviewDeviceDisplayFormat", "{0} - Instance {1} - Player {2}"),
+	return FText::Format(LOCTEXT("PreviewDeviceDisplayFormat", "{0} - SDL Instance {1} - Unreal Input Device {2} - Platform User {3}"),
 		FText::FromString(DeviceInfo.DeviceName),
 		FText::AsNumber(DeviceInfo.InstanceId.GetId()),
-		PlayerIndex);
+		InputDeviceId,
+		PlatformUserId);
 }
 
 TSharedRef<SWidget> SDeviceKeyMapping::CreateProfileInfoSection()
