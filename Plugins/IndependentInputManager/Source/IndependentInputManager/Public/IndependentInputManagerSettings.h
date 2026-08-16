@@ -90,12 +90,16 @@ public:
 	/**
 	 * Enables or disables rumble in the identified device profile. Connected
 	 * devices using the profile are reconnected when the setting changes.
+	 * @return False if the profile is missing or rumble cannot be enabled because
+	 * the current device does not support it.
 	 */
 	bool SetRumbleEnable(const FJoystickDeviceIdentifier& DeviceIdentifier, bool bEnable);
 
 	/**
 	 * Enables or disables trigger rumble in the identified device profile.
 	 * Connected devices using the profile are reconnected when the setting changes.
+	 * @return False if the profile is missing or trigger rumble cannot be enabled
+	 * because the current device does not support it.
 	 */
 	bool SetTriggerRumbleEnable(const FJoystickDeviceIdentifier& DeviceIdentifier, bool bEnable);
 
@@ -103,6 +107,8 @@ public:
 	 * Enables or disables adaptive-trigger effects in the identified device
 	 * profile. Active effects are cleared before connected devices using the
 	 * profile are reconnected.
+	 * @return False if the profile is missing or adaptive-trigger effects cannot
+	 * be enabled because the current device does not support them.
 	 */
 	bool SetAdaptiveTriggerEffectsEnable(const FJoystickDeviceIdentifier& DeviceIdentifier, bool bEnable);
 

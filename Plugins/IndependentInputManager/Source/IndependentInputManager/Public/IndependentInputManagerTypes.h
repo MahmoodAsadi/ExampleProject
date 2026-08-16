@@ -935,24 +935,25 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickFeatureConfig
 
 public:
 
-	/** Whether the device reports support for this feature. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mapping)
+	/** Whether the current device connection reports support for this feature. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = Mapping)
 	bool bSupports = false;
 
 protected:
 
-	/** Whether the feature is enabled. Unsupported features always remain disabled. */
+	/** User preference applied whenever the connected device supports this feature. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Mapping)
-	bool bEnabled = false;
+	bool bEnabled = true;
 
 public:
 
-	/** Applies the requested enabled state when the feature is supported. */
+	/** Stores the user's enabled preference independently of current hardware support. */
 	void SetEnabled(bool bInEnabled)
 	{
-		bEnabled = bInEnabled && bSupports;
+		bEnabled = bInEnabled;
 	}
 
+	bool IsEnabledRequested() const { return bEnabled; }
 	bool IsEnabled() const { return bSupports && bEnabled; }
 };
 

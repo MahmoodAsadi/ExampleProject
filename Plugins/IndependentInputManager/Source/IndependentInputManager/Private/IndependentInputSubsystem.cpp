@@ -19,6 +19,21 @@ namespace
 		| SDL_INIT_GAMEPAD
 		| SDL_INIT_HAPTIC
 		| SDL_INIT_SENSOR;
+
+	void RefreshDeviceFeatureSupport(
+		const FJoystickDeviceInfo& DeviceInfo,
+		const FSDLJoystickDevice& SDLDevice,
+		FJoystickDeviceKeyMapping& DeviceMapping)
+	{
+		DeviceMapping.Rumble.bSupports = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::Rumble);
+		DeviceMapping.TriggerRumble.bSupports = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::TriggerRumble);
+
+#if PLATFORM_WINDOWS
+		DeviceMapping.AdaptiveTriggerEffect.bSupports = SDLDevice.bIsDualSense;
+#else
+		DeviceMapping.AdaptiveTriggerEffect.bSupports = false;
+#endif // PLATFORM_WINDOWS
+	}
 }
 
 UIndependentInputSubsystem* UIndependentInputSubsystem::Get()
@@ -225,6 +240,40 @@ bool UIndependentInputSubsystem::FindDeviceInstanceIdForPlaformUser(const FPlatf
 	return false;
 }
 
+bool UIndependentInputSubsystem::SupportsRumble(const FInputDeviceInstanceId& DeviceId) const
+{
+	const FJoystickDeviceInfo* DeviceInfo = ConnectedDevices.Find(DeviceId);
+	if (!DeviceInfo)
+		return false;
+
+	return HasFlag(DeviceInfo->SupportedFeatures, EJoystickProperties::Rumble);
+}
+
+bool UIndependentInputSubsystem::GetRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+		return DeviceMapping->Rumble.IsEnabled();
+
+	return false;
+}
+
+bool UIndependentInputSubsystem::SetRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
+{
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+	{
+		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
+			return InputSettings->SetRumbleEnable(DeviceInfo->Identifier, bEnable);
+	}
+
+	return false;
+}
+
+void UIndependentInputSubsystem::SetRumbleEnableForAllDevices(bool bEnable)
+{
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+		InputSettings->SetRumbleEnableForAllDevices(bEnable);
+}
+
 bool UIndependentInputSubsystem::PlayRumble(const FInputDeviceInstanceId& DeviceId, float LowFrequency, float HighFrequency, float Duration/* = 0.05f*/)
 {
 	if (!SupportsRumble(DeviceId))
@@ -280,6 +329,40 @@ bool UIndependentInputSubsystem::PlayRumble(const FInputDeviceInstanceId& Device
 	return true;
 }
 
+bool UIndependentInputSubsystem::SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId) const
+{
+	const FJoystickDeviceInfo* DeviceInfo = ConnectedDevices.Find(DeviceId);
+	if (!DeviceInfo)
+		return false;
+
+	return HasFlag(DeviceInfo->SupportedFeatures, EJoystickProperties::TriggerRumble);
+}
+
+bool UIndependentInputSubsystem::GetTriggerRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+		return DeviceMapping->TriggerRumble.IsEnabled();
+
+	return false;
+}
+
+bool UIndependentInputSubsystem::SetTriggerRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
+{
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+	{
+		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
+			return InputSettings->SetTriggerRumbleEnable(DeviceInfo->Identifier, bEnable);
+	}
+
+	return false;
+}
+
+void UIndependentInputSubsystem::SetTriggerRumbleEnableForAllDevices(bool bEnable)
+{
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+		InputSettings->SetTriggerRumbleEnableForAllDevices(bEnable);
+}
+
 bool UIndependentInputSubsystem::PlayTriggerRumble(const FInputDeviceInstanceId& DeviceId, float LeftTrigger, float RightTrigger, float Duration)
 {
 	if (!SupportsTriggerRumble(DeviceId))
@@ -317,7 +400,7 @@ bool UIndependentInputSubsystem::PlayTriggerRumble(const FInputDeviceInstanceId&
 		if (SDL_RumbleGamepadTriggers(SDLDevice->Gamepad, Left, Right, DurationMS))
 			return true;
 	}
-	
+
 	if (SDLDevice->Joystick)
 	{
 		bSuccess = SDL_RumbleJoystickTriggers(SDLDevice->Joystick, Left, Right, DurationMS);
@@ -336,24 +419,6 @@ bool UIndependentInputSubsystem::PlayTriggerRumble(const FInputDeviceInstanceId&
 	return true;
 }
 
-bool UIndependentInputSubsystem::SupportsRumble(const FInputDeviceInstanceId& DeviceId) const
-{
-	const FJoystickDeviceInfo* DeviceInfo = ConnectedDevices.Find(DeviceId);
-	if (!DeviceInfo)
-		return false;
-
-	return HasFlag(DeviceInfo->SupportedFeatures, EJoystickProperties::Rumble);
-}
-
-bool UIndependentInputSubsystem::SupportsTriggerRumble(const FInputDeviceInstanceId& DeviceId) const
-{
-	const FJoystickDeviceInfo* DeviceInfo = ConnectedDevices.Find(DeviceId);
-	if (!DeviceInfo)
-		return false;
-
-	return HasFlag(DeviceInfo->SupportedFeatures, EJoystickProperties::TriggerRumble);
-}
-
 bool UIndependentInputSubsystem::SupportsAddaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const
 {
 #if PLATFORM_WINDOWS
@@ -367,87 +432,21 @@ bool UIndependentInputSubsystem::SupportsAddaptiveTriggerEffects(const FInputDev
 #endif // PLATFORM_WINDOWS
 }
 
-FJoystickDeviceKeyMapping UIndependentInputSubsystem::GetJoystickDeviceKeyMapping(const FInputDeviceInstanceId& DeviceId) const
+bool UIndependentInputSubsystem::SetAdaptiveTriggerEffectsEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
 {
-	if (const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId))
-		return *DeviceKeyMapping;
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+	{
+		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
+			return InputSettings->SetAdaptiveTriggerEffectsEnable(DeviceInfo->Identifier, bEnable);
+	}
 
-	return FJoystickDeviceKeyMapping();
+	return false;
 }
 
-bool UIndependentInputSubsystem::GetDeviceButtonMapping(const FInputDeviceInstanceId& DeviceId, int32 ButtonIndex, FJoystickButtonKeyMapping& OutButtonMapping) const
+void UIndependentInputSubsystem::SetAdaptiveTriggerEffectsEnableForAllDevices(bool bEnable)
 {
-	OutButtonMapping = FJoystickButtonKeyMapping();
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickButtonKeyMapping* FoundButtonMapping = DeviceKeyMapping->ButtonMappings.Find(ButtonIndex);
-	if (!FoundButtonMapping)
-		return false;
-
-	OutButtonMapping = *FoundButtonMapping;
-	return true;
-}
-
-bool UIndependentInputSubsystem::GetDeviceAxisMapping(const FInputDeviceInstanceId& DeviceId, int32 AxisIndex, FJoystickAxisKeyMapping& OutAxisMapping) const
-{
-	OutAxisMapping = FJoystickAxisKeyMapping();
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickAxisKeyMapping* FoundAxisMapping = DeviceKeyMapping->AxisMappings.Find(AxisIndex);
-	if (!FoundAxisMapping)
-		return false;
-
-	OutAxisMapping = *FoundAxisMapping;
-	return true;
-}
-
-bool UIndependentInputSubsystem::GetDeviceHatMapping(const FInputDeviceInstanceId& DeviceId, int32 HatIndex, FJoystickHatKeyMapping& OutHatMapping) const
-{
-	OutHatMapping = FJoystickHatKeyMapping();
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickHatKeyMapping* FoundHatMapping = DeviceKeyMapping->HatMappings.Find(HatIndex);
-	if (!FoundHatMapping)
-		return false;
-
-	OutHatMapping = *FoundHatMapping;
-	return true;
-}
-
-bool UIndependentInputSubsystem::GetDeviceBallMapping(const FInputDeviceInstanceId& DeviceId, int32 BallIndex, FJoystickBallKeyMapping& OutBallMapping) const
-{
-	OutBallMapping = FJoystickBallKeyMapping();
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickBallKeyMapping* FoundBallMapping = DeviceKeyMapping->BallMappings.Find(BallIndex);
-	if (!FoundBallMapping)
-		return false;
-
-	OutBallMapping = *FoundBallMapping;
-	return true;
-}
-
-bool UIndependentInputSubsystem::GetDeviceTouchpadMapping(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, FJoystickTouchpadKeyMapping& OutTouchpadMapping) const
-{
-	OutTouchpadMapping = FJoystickTouchpadKeyMapping();
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickTouchpadKeyMapping* FoundTouchpadMapping = DeviceKeyMapping->TouchpadMappings.Find(TouchpadIndex);
-	if (!FoundTouchpadMapping)
-		return false;
-
-	OutTouchpadMapping = *FoundTouchpadMapping;
-	return true;
+	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
+		InputSettings->SetAdaptiveTriggerEffectsEnableForAllDevices(bEnable);
 }
 
 bool UIndependentInputSubsystem::SetAdaptiveTriggerResistance(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 Force)
@@ -596,6 +595,89 @@ bool UIndependentInputSubsystem::ClearAdaptiveTriggerEffect(const FInputDeviceIn
 	return IndependentInputDevice->ClearAdaptiveTriggerEffect(DeviceId, Trigger);
 }
 
+FJoystickDeviceKeyMapping UIndependentInputSubsystem::GetJoystickDeviceKeyMapping(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId))
+		return *DeviceKeyMapping;
+
+	return FJoystickDeviceKeyMapping();
+}
+
+bool UIndependentInputSubsystem::GetDeviceButtonMapping(const FInputDeviceInstanceId& DeviceId, int32 ButtonIndex, FJoystickButtonKeyMapping& OutButtonMapping) const
+{
+	OutButtonMapping = FJoystickButtonKeyMapping();
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
+		return false;
+
+	const FJoystickButtonKeyMapping* FoundButtonMapping = DeviceKeyMapping->ButtonMappings.Find(ButtonIndex);
+	if (!FoundButtonMapping)
+		return false;
+
+	OutButtonMapping = *FoundButtonMapping;
+	return true;
+}
+
+bool UIndependentInputSubsystem::GetDeviceAxisMapping(const FInputDeviceInstanceId& DeviceId, int32 AxisIndex, FJoystickAxisKeyMapping& OutAxisMapping) const
+{
+	OutAxisMapping = FJoystickAxisKeyMapping();
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
+		return false;
+
+	const FJoystickAxisKeyMapping* FoundAxisMapping = DeviceKeyMapping->AxisMappings.Find(AxisIndex);
+	if (!FoundAxisMapping)
+		return false;
+
+	OutAxisMapping = *FoundAxisMapping;
+	return true;
+}
+
+bool UIndependentInputSubsystem::GetDeviceHatMapping(const FInputDeviceInstanceId& DeviceId, int32 HatIndex, FJoystickHatKeyMapping& OutHatMapping) const
+{
+	OutHatMapping = FJoystickHatKeyMapping();
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
+		return false;
+
+	const FJoystickHatKeyMapping* FoundHatMapping = DeviceKeyMapping->HatMappings.Find(HatIndex);
+	if (!FoundHatMapping)
+		return false;
+
+	OutHatMapping = *FoundHatMapping;
+	return true;
+}
+
+bool UIndependentInputSubsystem::GetDeviceBallMapping(const FInputDeviceInstanceId& DeviceId, int32 BallIndex, FJoystickBallKeyMapping& OutBallMapping) const
+{
+	OutBallMapping = FJoystickBallKeyMapping();
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
+		return false;
+
+	const FJoystickBallKeyMapping* FoundBallMapping = DeviceKeyMapping->BallMappings.Find(BallIndex);
+	if (!FoundBallMapping)
+		return false;
+
+	OutBallMapping = *FoundBallMapping;
+	return true;
+}
+
+bool UIndependentInputSubsystem::GetDeviceTouchpadMapping(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, FJoystickTouchpadKeyMapping& OutTouchpadMapping) const
+{
+	OutTouchpadMapping = FJoystickTouchpadKeyMapping();
+	const FJoystickDeviceKeyMapping* DeviceKeyMapping = ConnectedDevicesMappings.Find(DeviceId);
+	if (!DeviceKeyMapping)
+		return false;
+
+	const FJoystickTouchpadKeyMapping* FoundTouchpadMapping = DeviceKeyMapping->TouchpadMappings.Find(TouchpadIndex);
+	if (!FoundTouchpadMapping)
+		return false;
+
+	OutTouchpadMapping = *FoundTouchpadMapping;
+	return true;
+}
+
 TArray<EDeviceSensorType> UIndependentInputSubsystem::GetSupportedSensors(const FInputDeviceInstanceId& DeviceId)
 {
 	TArray<EDeviceSensorType> SupportedSensors;
@@ -675,101 +757,6 @@ void UIndependentInputSubsystem::SetSensorEnableForAllDevices(EDeviceSensorType 
 {
 	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
 		InputSettings->SetSensorEnableForAllDevices(Sensor, bEnable);
-}
-
-bool UIndependentInputSubsystem::GetRumbleSupported(const FInputDeviceInstanceId& DeviceId) const
-{
-	if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->GetRumbleSupported(DeviceInfo->Identifier);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::GetRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const
-{
-	if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->GetRumbleEnabled(DeviceInfo->Identifier);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::GetTriggerRumbleSupported(const FInputDeviceInstanceId& DeviceId) const
-{
-	if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->GetTriggerRumbleSupported(DeviceInfo->Identifier);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::GetTriggerRumbleEnabled(const FInputDeviceInstanceId& DeviceId) const
-{
-	if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->GetTriggerRumbleEnabled(DeviceInfo->Identifier);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::SetRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->SetRumbleEnable(DeviceInfo->Identifier, bEnable);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::SetTriggerRumbleEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->SetTriggerRumbleEnable(DeviceInfo->Identifier, bEnable);
-	}
-
-	return false;
-}
-
-bool UIndependentInputSubsystem::SetAdaptiveTriggerEffectsEnable(const FInputDeviceInstanceId& DeviceId, bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->SetAdaptiveTriggerEffectsEnable(DeviceInfo->Identifier, bEnable);
-	}
-
-	return false;
-}
-
-void UIndependentInputSubsystem::SetRumbleEnableForAllDevices(bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-		InputSettings->SetRumbleEnableForAllDevices(bEnable);
-}
-
-void UIndependentInputSubsystem::SetTriggerRumbleEnableForAllDevices(bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-		InputSettings->SetTriggerRumbleEnableForAllDevices(bEnable);
-}
-
-void UIndependentInputSubsystem::SetAdaptiveTriggerEffectsEnableForAllDevices(bool bEnable)
-{
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-		InputSettings->SetAdaptiveTriggerEffectsEnableForAllDevices(bEnable);
 }
 
 void UIndependentInputSubsystem::ReconnectDevice(const FJoystickDeviceIdentifier& DeviceIdentifier)
@@ -1275,7 +1262,10 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable();
 	if (InputManagerSettings->HasDeviceKeyMapping(DeviceInfo.Identifier))
 	{
-		FJoystickDeviceKeyMapping DeviceMapping = *InputManagerSettings->FindDeviceKeyMappings(DeviceInfo.Identifier);
+		FJoystickDeviceKeyMapping* StoredDeviceMapping = InputManagerSettings->FindDeviceKeyMappings(DeviceInfo.Identifier);
+		RefreshDeviceFeatureSupport(DeviceInfo, SDLDevice, *StoredDeviceMapping);
+
+		FJoystickDeviceKeyMapping DeviceMapping = *StoredDeviceMapping;
 		ApplyInputOwnershipPolicy(DeviceInfo, DeviceMapping);
 
 		if (DeviceMapping.bUseIndependentInputAPI)
@@ -1285,6 +1275,7 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	}
 
 	FJoystickDeviceKeyMapping DeviceKeyMapping(DeviceInfo.MappingId, DeviceInfo.DeviceName);
+	RefreshDeviceFeatureSupport(DeviceInfo, SDLDevice, DeviceKeyMapping);
 	ApplyInputOwnershipPolicy(DeviceInfo, DeviceKeyMapping);
 	if (!DeviceKeyMapping.bUseIndependentInputAPI)
 		return;
@@ -1319,18 +1310,6 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	{
 		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::RightGyroscope, false));
 	}
-
-	DeviceKeyMapping.Rumble.bSupports = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::Rumble);
-	DeviceKeyMapping.Rumble.SetEnabled(DeviceKeyMapping.Rumble.bSupports);
-	DeviceKeyMapping.TriggerRumble.bSupports = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::TriggerRumble);
-	DeviceKeyMapping.TriggerRumble.SetEnabled(DeviceKeyMapping.TriggerRumble.bSupports);
-	DeviceKeyMapping.AdaptiveTriggerEffect.bSupports = false;
-	DeviceKeyMapping.AdaptiveTriggerEffect.SetEnabled(false);
-
-#if PLATFORM_WINDOWS
-	DeviceKeyMapping.AdaptiveTriggerEffect.bSupports = SDLDevice.bIsDualSense;
-	DeviceKeyMapping.AdaptiveTriggerEffect.SetEnabled(SDLDevice.bIsDualSense);
-#endif // PLATFORM_WINDOWS
 
 	for (int32 BallIndex = 0; BallIndex < DeviceInfo.NumberOfBalls; ++BallIndex)
 	{

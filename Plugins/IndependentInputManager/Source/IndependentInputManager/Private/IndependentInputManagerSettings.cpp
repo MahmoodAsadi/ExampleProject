@@ -168,14 +168,22 @@ bool UIndependentInputManagerSettings::SetRumbleEnable(const FJoystickDeviceIden
 	if (!DeviceKeyMapping)
 		return false;
 
-	if (DeviceKeyMapping->Rumble.IsEnabled() == bEnable)
+	FJoystickFeatureConfig& Rumble = DeviceKeyMapping->Rumble;
+	if (bEnable && !Rumble.bSupports)
+		return false;
+
+	if (Rumble.IsEnabledRequested() == bEnable)
 		return true;
 
-	DeviceKeyMapping->Rumble.SetEnabled(bEnable);
+	const bool bWasEnabled = Rumble.IsEnabled();
+	Rumble.SetEnabled(bEnable);
 	TryUpdateDefaultConfigFile();
 
-	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
-		InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	if (bWasEnabled != Rumble.IsEnabled())
+	{
+		if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
+			InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	}
 
 	return true;
 }
@@ -186,14 +194,22 @@ bool UIndependentInputManagerSettings::SetTriggerRumbleEnable(const FJoystickDev
 	if (!DeviceKeyMapping)
 		return false;
 
-	if (DeviceKeyMapping->TriggerRumble.IsEnabled() == bEnable)
+	FJoystickFeatureConfig& TriggerRumble = DeviceKeyMapping->TriggerRumble;
+	if (bEnable && !TriggerRumble.bSupports)
+		return false;
+
+	if (TriggerRumble.IsEnabledRequested() == bEnable)
 		return true;
 
-	DeviceKeyMapping->TriggerRumble.SetEnabled(bEnable);
+	const bool bWasEnabled = TriggerRumble.IsEnabled();
+	TriggerRumble.SetEnabled(bEnable);
 	TryUpdateDefaultConfigFile();
 
-	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
-		InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	if (bWasEnabled != TriggerRumble.IsEnabled())
+	{
+		if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
+			InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	}
 
 	return true;
 }
@@ -204,27 +220,39 @@ bool UIndependentInputManagerSettings::SetAdaptiveTriggerEffectsEnable(const FJo
 	if (!DeviceKeyMapping)
 		return false;
 
-	if (DeviceKeyMapping->AdaptiveTriggerEffect.IsEnabled() == bEnable)
+	FJoystickFeatureConfig& AdaptiveTriggerEffect = DeviceKeyMapping->AdaptiveTriggerEffect;
+	if (bEnable && !AdaptiveTriggerEffect.bSupports)
+		return false;
+
+	if (AdaptiveTriggerEffect.IsEnabledRequested() == bEnable)
 		return true;
 
-	if (!bEnable)
+	const bool bWasEnabled = AdaptiveTriggerEffect.IsEnabled();
+	if (bWasEnabled && !bEnable)
 	{
 		UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
-		for (const FJoystickDeviceInfo& DeviceInfo : ConnectedDevices)
+		if (IsValid(InputSubsystem))
 		{
-			if (DeviceInfo.Identifier == DeviceIdentifier)
+			for (const FJoystickDeviceInfo& DeviceInfo : ConnectedDevices)
 			{
-				InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
-				InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
+				if (DeviceInfo.Identifier == DeviceIdentifier)
+				{
+					InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
+					InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
+				}
 			}
 		}
 	}
 
-	DeviceKeyMapping->AdaptiveTriggerEffect.SetEnabled(bEnable);
+	AdaptiveTriggerEffect.SetEnabled(bEnable);
 	TryUpdateDefaultConfigFile();
 
-	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
-		InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	if (bWasEnabled != AdaptiveTriggerEffect.IsEnabled())
+	{
+		UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
+		if (IsValid(InputSubsystem))
+			InputSubsystem->ReconnectDevice(DeviceIdentifier);
+	}
 
 	return true;
 }
@@ -236,11 +264,13 @@ void UIndependentInputManagerSettings::SetRumbleEnableForAllDevices(bool bEnable
 
 	for (TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& DeviceMapping : DevicesKeyMapping)
 	{
-		if (DeviceMapping.Value.Rumble.IsEnabled() != bEnable)
+		FJoystickFeatureConfig& Rumble = DeviceMapping.Value.Rumble;
+		if (Rumble.IsEnabledRequested() != bEnable)
 		{
 			bUpdatedAny = true;
-			DeviceMapping.Value.Rumble.SetEnabled(bEnable);
-			if (IsValid(InputSubsystem))
+			const bool bWasEnabled = Rumble.IsEnabled();
+			Rumble.SetEnabled(bEnable);
+			if (bWasEnabled != Rumble.IsEnabled() && IsValid(InputSubsystem))
 				InputSubsystem->ReconnectDevice(DeviceMapping.Key);
 		}
 	}
@@ -256,11 +286,13 @@ void UIndependentInputManagerSettings::SetTriggerRumbleEnableForAllDevices(bool 
 
 	for (TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& DeviceMapping : DevicesKeyMapping)
 	{
-		if (DeviceMapping.Value.TriggerRumble.IsEnabled() != bEnable)
+		FJoystickFeatureConfig& TriggerRumble = DeviceMapping.Value.TriggerRumble;
+		if (TriggerRumble.IsEnabledRequested() != bEnable)
 		{
 			bUpdatedAny = true;
-			DeviceMapping.Value.TriggerRumble.SetEnabled(bEnable);
-			if (IsValid(InputSubsystem))
+			const bool bWasEnabled = TriggerRumble.IsEnabled();
+			TriggerRumble.SetEnabled(bEnable);
+			if (bWasEnabled != TriggerRumble.IsEnabled() && IsValid(InputSubsystem))
 				InputSubsystem->ReconnectDevice(DeviceMapping.Key);
 		}
 	}
@@ -274,23 +306,25 @@ void UIndependentInputManagerSettings::SetAdaptiveTriggerEffectsEnableForAllDevi
 	UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
 	bool bUpdatedAny = false;
 
-	for (TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& DeviceMapping : DevicesKeyMapping)
-	{
-		if (DeviceMapping.Value.AdaptiveTriggerEffect.IsEnabled() != bEnable)
-		{
-			bUpdatedAny = true;
-			DeviceMapping.Value.AdaptiveTriggerEffect.SetEnabled(bEnable);
-			if (IsValid(InputSubsystem))
-				InputSubsystem->ReconnectDevice(DeviceMapping.Key);
-		}
-	}
-
-	if (!bEnable)
+	if (!bEnable && IsValid(InputSubsystem))
 	{
 		for (const FJoystickDeviceInfo& DeviceInfo : ConnectedDevices)
 		{
 			InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
 			InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
+		}
+	}
+
+	for (TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& DeviceMapping : DevicesKeyMapping)
+	{
+		FJoystickFeatureConfig& AdaptiveTriggerEffect = DeviceMapping.Value.AdaptiveTriggerEffect;
+		if (AdaptiveTriggerEffect.IsEnabledRequested() != bEnable)
+		{
+			bUpdatedAny = true;
+			const bool bWasEnabled = AdaptiveTriggerEffect.IsEnabled();
+			AdaptiveTriggerEffect.SetEnabled(bEnable);
+			if (bWasEnabled != AdaptiveTriggerEffect.IsEnabled() && IsValid(InputSubsystem))
+				InputSubsystem->ReconnectDevice(DeviceMapping.Key);
 		}
 	}
 
