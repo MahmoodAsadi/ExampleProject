@@ -1069,6 +1069,8 @@ void UIndependentInputSubsystem::ShutdownSDL()
 
 void UIndependentInputSubsystem::CloseSDLDevice(FSDLJoystickDevice& SLDDevice, const FJoystickDeviceInfo& DeviceInfo, bool bFadeOutLED)
 {
+	const bool bIsPluginOwned = ConnectedDevicesMappings.Contains(DeviceInfo.InstanceId);
+
 	if (SLDDevice.Haptic)
 	{
 		SDL_CloseHaptic(SLDDevice.Haptic);
@@ -1077,19 +1079,26 @@ void UIndependentInputSubsystem::CloseSDLDevice(FSDLJoystickDevice& SLDDevice, c
 
 	if (SLDDevice.Joystick)
 	{
-		bool bHasLED = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::MonoLED)
+		// Turn off the player LED
+		SDL_SetJoystickPlayerIndex(SLDDevice.Joystick, -1);
+
+		// Turn off other LEDs if exist
+		const bool bHasLED = HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::MonoLED)
 			|| HasFlag(DeviceInfo.SupportedFeatures, EJoystickProperties::RGBLED);
 
 		if (bFadeOutLED && bHasLED)
 			FadeOutJoystickLED(SLDDevice.Joystick);
 
-		SDL_RumbleJoystick(SLDDevice.Joystick, 0, 0, 0);
-		SDL_SetJoystickPlayerIndex(SLDDevice.Joystick, -1);
+		// Stops Rumble on close.
+		if (bIsPluginOwned)
+			SDL_RumbleJoystick(SLDDevice.Joystick, 0, 0, 0);
 	}
 
 	if (SLDDevice.Gamepad)
 	{
-		SDL_RumbleGamepad(SLDDevice.Gamepad, 0, 0, 0);
+		// Stops Rumble on close.
+		if (bIsPluginOwned)
+			SDL_RumbleGamepad(SLDDevice.Gamepad, 0, 0, 0);
 
 		SDL_CloseGamepad(SLDDevice.Gamepad);
 		SLDDevice.Gamepad = nullptr;
