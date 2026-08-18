@@ -18,6 +18,8 @@ class INDEPENDENTINPUTMANAGER_API UIndependentInputManagerSettings : public UDev
 	
 public:
 
+	friend class UIndependentInputSubsystem;
+
 	virtual FName GetCategoryName() const override
 	{
 		return TEXT("Plugins");
@@ -53,21 +55,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Independent Input Manager", meta = (DisplayName = "FindDeviceKeyMappings"))
 	bool K2_FindDeviceKeyMappings(const FJoystickDeviceIdentifier& DeviceIdentifier, FJoystickDeviceKeyMapping& OutDeviceKeyMapping);
 
-	bool GetSensorEnabled(const FJoystickDeviceIdentifier& DeviceIdentifier, EDeviceSensorType Sensor) const;
+	/** Returns whether Accelerometer Sensor(s) (Accelerometer, LeftAccelerometer, RightAccelerometer) is enabled. */
+	bool GetAccelerometerSensorEnabled() const { return bEnableAccelerometer; }
 
-	/**
-	 * Enables or disables a sensor in the profile identified by DeviceIdentifier.
-	 * Connected devices using the profile are reconnected to rebuild their
-	 * runtime state when the setting changes.
-	 */
-	bool SetSensorEnable(const FJoystickDeviceIdentifier& DeviceIdentifier, EDeviceSensorType Sensor, bool bEnable);
-
-	/**
-	 * Enables or disables a sensor in every profile that contains that sensor.
-	 * Connected devices using an updated profile are reconnected to rebuild
-	 * their runtime state.
-	 */
-	void SetSensorEnableForAllDevices(EDeviceSensorType Sensor, bool bEnable);
+	/** Returns whether Gyroscope Sensor(s) (Gyroscope, LeftGyroscope, RightGyroscope) is enabled. */
+	bool GetGyroscopeSensorEnabled() const { return bEnableGyroscope; }
 
 	/** Returns whether the device profile reports rumble support. */
 	bool GetRumbleSupported(const FJoystickDeviceIdentifier& DeviceIdentifier) const;
@@ -131,9 +123,21 @@ public:
 	bool GetForceDevicesForSingleUser() const { return bForceAllDevicesForSingleUser; }
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> GetDevicesKeyMapping() const { return DevicesKeyMapping; }
 
+private:
+
+	/** Enables or disables Accelerometer sensor(s) (Accelerometer, LeftAccelerometer, RightAccelerometer). */
+	void SetAccelerometerSensorEnable(bool bEnable);
+
+	/** Enables or disables Gyroscope sensor(s) (Gyroscope, LeftGyroscope, RightGyroscope). */
+	void SetGyroscopeSensorEnable(bool bEnable);
+
 protected:
 
 	void GenerateRuntimeKeysForDeviceMapping(FJoystickDeviceKeyMapping& DeviceKeyMapping);
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = "Connected Devices")
 	TArray<FJoystickDeviceInfo> ConnectedDevices;
@@ -145,7 +149,7 @@ protected:
 	 * XInput Device plugin to avoid duplicate input.
 	 */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
-	bool bIgnoreXInputDevices = true;
+	bool bIgnoreXInputDevices = false;
 
 	/**
 	 * Keeps Valve input devices visible for diagnostics while allowing Unreal's
@@ -159,11 +163,19 @@ protected:
 
 	/** Completely exclude SDL virtual devices from discovery, profiles, delegates, and gameplay input. */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
-	bool bIgnoreVirtualDevices = false;
+	bool bIgnoreVirtualDevices = true;
 
-	/** Maps every plugin-owned input device to Unreal's primary platform user. */
-	UPROPERTY(Config, EditAnywhere, Category = "Device Profile")
+	/** Maps every plugin-owned input device to Unreal's primary platform user. Disable this if your game is splitscreen multiplayer */
+	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")
 	bool bForceAllDevicesForSingleUser = false;
+
+	/** Whether device(s) Accelerometer sensor should be enabled or not. */
+	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")
+	bool bEnableAccelerometer = true;
+
+	/** Whether device(s) Gyroscope sensor should be enabled or not. */
+	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")
+	bool bEnableGyroscope = false;
 
 	UPROPERTY(Config, VisibleAnywhere, Category = "Device Profile")
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> DevicesKeyMapping;

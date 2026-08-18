@@ -811,32 +811,38 @@ TArray<EJoystickProperties> UIndependentInputSubsystem::GetSupportedFeatures(con
 	return SupportedFeatures;
 }
 
-bool UIndependentInputSubsystem::GetSensorEnabled(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor) const
+bool UIndependentInputSubsystem::GetAccelerometerSensorEnabled() const
 {
-	if (const UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::Get())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->GetSensorEnabled(DeviceInfo->Identifier, Sensor);
-	}
+	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
+		return InputManagerSettings->GetAccelerometerSensorEnabled();
 
 	return false;
 }
 
-bool UIndependentInputSubsystem::SetSensorEnable(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor, bool bEnable)
+bool UIndependentInputSubsystem::GetGyroscopeSensorEnabled() const
 {
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-	{
-		if (const FJoystickDeviceInfo* DeviceInfo = GetDeviceInfo(DeviceId))
-			return InputSettings->SetSensorEnable(DeviceInfo->Identifier, Sensor, bEnable);
-	}
+	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
+		return InputManagerSettings->GetGyroscopeSensorEnabled();
 
 	return false;
 }
 
-void UIndependentInputSubsystem::SetSensorEnableForAllDevices(EDeviceSensorType Sensor, bool bEnable)
+void UIndependentInputSubsystem::SetAccelerometerSensorEnable(bool bEnable)
 {
-	if (UIndependentInputManagerSettings* InputSettings = UIndependentInputManagerSettings::GetMutable())
-		InputSettings->SetSensorEnableForAllDevices(Sensor, bEnable);
+	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
+		InputManagerSettings->SetAccelerometerSensorEnable(bEnable);
+
+	if (IndependentInputDevice.IsValid())
+		IndependentInputDevice->SetAccelerometerSensorEnable(bEnable);
+}
+
+void UIndependentInputSubsystem::SetGyroscopeSensorEnable(bool bEnable)
+{
+	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
+		InputManagerSettings->SetGyroscopeSensorEnable(bEnable);
+
+	if (IndependentInputDevice.IsValid())
+		IndependentInputDevice->SetGyroscopeSensorEnable(bEnable);
 }
 
 void UIndependentInputSubsystem::ReconnectDevice(const FJoystickDeviceIdentifier& DeviceIdentifier)
@@ -1372,32 +1378,32 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::Accelerometer))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::Accelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::Accelerometer, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::Accelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::Accelerometer));
 	}
 
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::Gyroscope))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::Gyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::Gyroscope, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::Gyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::Gyroscope));
 	}
 
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::LeftAccelerometer))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::LeftAccelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::LeftAccelerometer, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::LeftAccelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::LeftAccelerometer));
 	}
 
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::RightAccelerometer))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightAccelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::RightAccelerometer, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightAccelerometer, FJoystickSensorKeyMapping(EDeviceSensorType::RightAccelerometer));
 	}
 
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::LeftGyroscope))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::LeftGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::LeftGyroscope, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::LeftGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::LeftGyroscope));
 	}
 
 	if (HasFlag(DeviceInfo.SupportedSensors, EDeviceSensorType::RightGyroscope))
 	{
-		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::RightGyroscope, false));
+		DeviceKeyMapping.SensorMappings.Add(EDeviceSensorType::RightGyroscope, FJoystickSensorKeyMapping(EDeviceSensorType::RightGyroscope));
 	}
 
 	for (int32 BallIndex = 0; BallIndex < DeviceInfo.NumberOfBalls; ++BallIndex)

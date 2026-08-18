@@ -15,6 +15,9 @@ class INDEPENDENTINPUTMANAGER_API FIndependentInputDevice final : public IInputD
 {
 public:
 
+	friend class UIndependentInputSubsystem;
+	friend class UIndependentInputManagerSettings;
+
 	explicit FIndependentInputDevice(const TSharedRef<FGenericApplicationMessageHandler>& InMessageHandler);
 
 	virtual void Tick(float DeltaTime) override {}
@@ -53,6 +56,8 @@ public:
 
 private:
 
+	void SetAccelerometerSensorEnable(bool bEnable);
+	void SetGyroscopeSensorEnable(bool bEnable);
 	FString GetDeviceHardwareDeviceIdentifier(const FJoystickDeviceInfo& DeviceInfo) const;
 	FJoystickDeviceState CreateDeviceState(FJoystickDeviceInfo& DeviceInfo, const FJoystickDeviceKeyMapping& InKeyMapping);
 	void UpdateVirtualButtons(FAxisState* AxisState);
@@ -63,6 +68,8 @@ private:
 	void HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleSensorState(TMap<EDeviceSensorType, FSensorState>& Sensors, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleForceFeedback(FForceFeedbackState& ForceFeedbackState, const FInputDeviceInstanceId& DeviceId);
+
+	void ResetSensorState(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType SensorType);
 
 	TInputDeviceMap<FInputDeviceInstanceId> InternalDeviceIdMappings;
 	TSharedRef<FGenericApplicationMessageHandler> MessageHandler;

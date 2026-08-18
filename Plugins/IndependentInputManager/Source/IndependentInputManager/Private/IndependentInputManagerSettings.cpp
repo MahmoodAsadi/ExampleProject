@@ -2,6 +2,7 @@
 
 #include "IndependentInputManagerSettings.h"
 
+#include "IndependentInputDevice.h"
 #include "IndependentInputSubsystem.h"
 
 
@@ -48,64 +49,6 @@ bool UIndependentInputManagerSettings::K2_FindDeviceKeyMappings(const FJoystickD
 		return true;
 	}
 	return false;
-}
-
-bool UIndependentInputManagerSettings::GetSensorEnabled(const FJoystickDeviceIdentifier& DeviceIdentifier, EDeviceSensorType Sensor) const
-{
-	const FJoystickDeviceKeyMapping* DeviceKeyMapping = DevicesKeyMapping.Find(DeviceIdentifier);
-	if (!DeviceKeyMapping)
-		return false;
-
-	const FJoystickSensorKeyMapping* SensorMapping = DeviceKeyMapping->SensorMappings.Find(Sensor);
-	if (!SensorMapping)
-		return false;
-
-	return SensorMapping->bEnabled;
-}
-
-bool UIndependentInputManagerSettings::SetSensorEnable(const FJoystickDeviceIdentifier& DeviceIdentifier, EDeviceSensorType Sensor, bool bEnable)
-{
-	FJoystickDeviceKeyMapping* DeviceKeyMapping = DevicesKeyMapping.Find(DeviceIdentifier);
-	if (!DeviceKeyMapping)
-		return false;
-
-	FJoystickSensorKeyMapping* SensorMapping = DeviceKeyMapping->SensorMappings.Find(Sensor);
-	if (!SensorMapping)
-		return false;
-
-	if (SensorMapping->bEnabled == bEnable)
-		return true;
-
-	SensorMapping->bEnabled = bEnable;
-	TryUpdateDefaultConfigFile();
-
-	if (UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get())
-		InputSubsystem->ReconnectDevice(DeviceIdentifier);
-
-	return true;
-}
-
-void UIndependentInputManagerSettings::SetSensorEnableForAllDevices(EDeviceSensorType Sensor, bool bEnable)
-{
-	UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
-	bool bUpdatedAny = false;
-
-	for (TPair<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping>& DeviceMapping : DevicesKeyMapping)
-	{
-		if (FJoystickSensorKeyMapping* SensorKeyMapping = DeviceMapping.Value.SensorMappings.Find(Sensor))
-		{
-			if (SensorKeyMapping->bEnabled != bEnable)
-			{
-				bUpdatedAny = true;
-				SensorKeyMapping->bEnabled = bEnable;
-				if (IsValid(InputSubsystem))
-					InputSubsystem->ReconnectDevice(DeviceMapping.Key);
-			}
-		}
-	}
-
-	if (bUpdatedAny)
-		TryUpdateDefaultConfigFile();
 }
 
 bool UIndependentInputManagerSettings::GetRumbleSupported(const FJoystickDeviceIdentifier& DeviceIdentifier) const
@@ -358,6 +301,24 @@ void UIndependentInputManagerSettings::GenerateDevicesRuntimeKeys()
 	}
 }
 
+void UIndependentInputManagerSettings::SetAccelerometerSensorEnable(bool bEnable)
+{
+	if (bEnableAccelerometer == bEnable)
+		return;
+
+	bEnableAccelerometer = bEnable;
+	TryUpdateDefaultConfigFile();
+}
+
+void UIndependentInputManagerSettings::SetGyroscopeSensorEnable(bool bEnable)
+{
+	if (bEnableGyroscope == bEnable)
+		return;
+
+	bEnableGyroscope = bEnable;
+	TryUpdateDefaultConfigFile();
+}
+
 void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoystickDeviceKeyMapping& DeviceKeyMapping)
 {
 	UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
@@ -471,3 +432,24 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 	}
 
 }
+
+#if WITH_EDITOR
+void UIndependentInputManagerSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	UIndependentInputSubsystem* InputSubsystem = UIndependentInputSubsystem::Get();
+
+	if (!IsValid(InputSubsystem))
+		return;
+
+	FIndependentInputDevice* InputDevice = InputSubsystem->GetInputDevice();
+	if (!InputDevice)
+		return;
+
+	if (PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, bEnableAccelerometer))
+		InputDevice->SetAccelerometerSensorEnable(bEnableAccelerometer);
+
+	if (PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, bEnableGyroscope))
+		InputDevice->SetGyroscopeSensorEnable(bEnableGyroscope);
+}
+#endif // WITH_EDITOR

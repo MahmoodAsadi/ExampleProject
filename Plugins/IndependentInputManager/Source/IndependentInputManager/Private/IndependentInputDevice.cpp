@@ -162,9 +162,31 @@ void FIndependentInputDevice::DevicePluggedIn(FJoystickDeviceInfo& DeviceInfo, c
 
 	DeviceStates.Add(DeviceInfo.InstanceId, NewState);
 
+	const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get();
 	for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping.SensorMappings)
 	{
-		SDL_SetGamepadSensorEnabled(SDLDevice.Gamepad, FSDLInputUtils::ConvertSensorType(SensorMapping.Key), SensorMapping.Value.bEnabled);
+		if (SensorMapping.Key == EDeviceSensorType::None)
+			continue;
+
+		bool bEnabled = false;
+		switch (SensorMapping.Key)
+		{
+			case EDeviceSensorType::Accelerometer:
+			case EDeviceSensorType::LeftAccelerometer:
+			case EDeviceSensorType::RightAccelerometer:
+				if (InputManagerSettings)
+					bEnabled = InputManagerSettings->GetAccelerometerSensorEnabled();
+			break;
+		
+			case EDeviceSensorType::Gyroscope:
+			case EDeviceSensorType::LeftGyroscope:
+			case EDeviceSensorType::RightGyroscope:
+				if (InputManagerSettings)
+					bEnabled = InputManagerSettings->GetGyroscopeSensorEnabled();
+			break;
+		}
+
+		SDL_SetGamepadSensorEnabled(SDLDevice.Gamepad, FSDLInputUtils::ConvertSensorType(SensorMapping.Key), bEnabled);
 	}
 }
 
@@ -488,6 +510,96 @@ FSensorState FIndependentInputDevice::GetSensorState(const FInputDeviceInstanceI
 		return FSensorState();
 
 	return DeviceStates[DeviceId].Sensors[SensorType];
+}
+
+void FIndependentInputDevice::SetAccelerometerSensorEnable(bool bEnable)
+{
+	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& DeviceInfo : DeviceInfos)
+	{
+		const FJoystickDeviceKeyMapping* DeviceMapping = DeviceMappings.Find(DeviceInfo.Key);
+		if (!DeviceMapping)
+			continue;
+
+		FSDLJoystickDevice* SDLDevice = SDLDevices.Find(DeviceInfo.Key);
+		if (!SDLDevice || !SDLDevice->Gamepad)
+			continue;
+
+		for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping->SensorMappings)
+		{
+			switch (SensorMapping.Key)
+			{
+				case EDeviceSensorType::Accelerometer:
+				case EDeviceSensorType::LeftAccelerometer:
+				case EDeviceSensorType::RightAccelerometer:
+					SDL_SetGamepadSensorEnabled(SDLDevice->Gamepad, FSDLInputUtils::ConvertSensorType(SensorMapping.Key), bEnable);
+				break;
+			}
+		}
+	}
+
+	if (bEnable)
+		return;
+
+	// Reset sensor states in case of disabling.
+	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceState>& DeviceState : DeviceStates)
+	{
+		for (const TPair<EDeviceSensorType, FSensorState>& SensorState : DeviceState.Value.Sensors)
+		{
+			switch (SensorState.Key)
+			{
+				case EDeviceSensorType::Accelerometer:
+				case EDeviceSensorType::LeftAccelerometer:
+				case EDeviceSensorType::RightAccelerometer:
+					ResetSensorState(DeviceState.Key, SensorState.Key);
+				break;
+			}
+		}
+	}
+}
+
+void FIndependentInputDevice::SetGyroscopeSensorEnable(bool bEnable)
+{
+	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& DeviceInfo : DeviceInfos)
+	{
+		const FJoystickDeviceKeyMapping* DeviceMapping = DeviceMappings.Find(DeviceInfo.Key);
+		if (!DeviceMapping)
+			continue;
+
+		FSDLJoystickDevice* SDLDevice = SDLDevices.Find(DeviceInfo.Key);
+		if (!SDLDevice || !SDLDevice->Gamepad)
+			continue;
+
+		for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping->SensorMappings)
+		{
+			switch (SensorMapping.Key)
+			{
+				case EDeviceSensorType::Gyroscope:
+				case EDeviceSensorType::LeftGyroscope:
+				case EDeviceSensorType::RightGyroscope:
+					SDL_SetGamepadSensorEnabled(SDLDevice->Gamepad, FSDLInputUtils::ConvertSensorType(SensorMapping.Key), bEnable);
+				break;
+			}
+		}
+	}
+
+	if (bEnable)
+		return;
+
+	// Reset sensor states in case of disabling.
+	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceState>& DeviceState : DeviceStates)
+	{
+		for (const TPair<EDeviceSensorType, FSensorState>& SensorState : DeviceState.Value.Sensors)
+		{
+			switch (SensorState.Key)
+			{
+				case EDeviceSensorType::Gyroscope:
+				case EDeviceSensorType::LeftGyroscope:
+				case EDeviceSensorType::RightGyroscope:
+					ResetSensorState(DeviceState.Key, SensorState.Key);
+				break;
+			}
+		}
+	}
 }
 
 FString FIndependentInputDevice::GetDeviceHardwareDeviceIdentifier(const FJoystickDeviceInfo& DeviceInfo) const
@@ -824,6 +936,19 @@ void FIndependentInputDevice::HandleForceFeedback(FForceFeedbackState& ForceFeed
 	ForceFeedbackState.LastLowFrequency = Low;
 	ForceFeedbackState.LastHighFrequency = High;
 	ForceFeedbackState.bDirty = false;
+}
+
+void FIndependentInputDevice::ResetSensorState(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType SensorType)
+{
+	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
+	if (!DeviceState)
+		return;
+
+	FSensorState* SensorState = DeviceState->Sensors.Find(SensorType);
+	if (!SensorState)
+		return;
+
+	SensorState->Update(FVector::ZeroVector);
 }
 
 #undef LOCTEXT_NAMESPACE

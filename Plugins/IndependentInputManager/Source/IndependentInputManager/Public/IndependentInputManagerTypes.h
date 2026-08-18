@@ -857,23 +857,12 @@ public:
 
 	FJoystickSensorKeyMapping(const EDeviceSensorType InSensorType)
 		: SensorType(InSensorType)
-		, bEnabled(true)
-	{
-		SetupKeys();
-	}
-
-	FJoystickSensorKeyMapping(const EDeviceSensorType InSensorType, bool bEnable)
-		: SensorType(InSensorType)
-		, bEnabled(bEnable)
 	{
 		SetupKeys();
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Sensor)
 	EDeviceSensorType SensorType = EDeviceSensorType::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sensor)
-	bool bEnabled = false;
 
 	// Accelerometer and Gyroscope does not need key mappings since they are bound to "Acceleration" and "Rotation Rate" input events directly.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Sensor, meta = (EditCondition = "SensorType != EDeviceSensorType::None && SensorType != EDeviceSensorType::Accelerometer && SensorType != EDeviceSensorType::Gyroscope"))

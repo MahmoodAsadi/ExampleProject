@@ -267,23 +267,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	TArray<EJoystickProperties> GetSupportedFeatures(const FInputDeviceInstanceId& DeviceId);
 
-	/** Returns whether a sensor is enabled in the connected device's profile. */
+	/** Returns whether Accelerometer Sensor(s) (Accelerometer, LeftAccelerometer, RightAccelerometer) is enabled. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
-	bool GetSensorEnabled(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor) const;
+	bool GetAccelerometerSensorEnabled() const;
 
-	/**
-	 * Enables or disables a sensor in the connected device's profile. All
-	 * connected devices sharing that profile are reconnected when it changes.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
-	bool SetSensorEnable(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType Sensor, bool bEnable);
+	/** Returns whether Gyroscope Sensor(s) (Gyroscope, LeftGyroscope, RightGyroscope) is enabled. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool GetGyroscopeSensorEnabled() const;
 
-	/**
-	 * Enables or disables a sensor in every profile that contains it. Connected
-	 * devices using an updated profile are reconnected.
-	 */
+	/** Enables or disables Accelerometer sensor(s) (Accelerometer, LeftAccelerometer, RightAccelerometer). */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
-	void SetSensorEnableForAllDevices(EDeviceSensorType Sensor, bool bEnable);
+	void SetAccelerometerSensorEnable(bool bEnable);
+
+	/** Enables or disables Gyroscope sensor(s) (Gyroscope, LeftGyroscope, RightGyroscope). */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Subsystem")
+	void SetGyroscopeSensorEnable(bool bEnable);
 
 	/**
 	 * Reopens all connected devices matching DeviceIdentifier and rebuilds their
