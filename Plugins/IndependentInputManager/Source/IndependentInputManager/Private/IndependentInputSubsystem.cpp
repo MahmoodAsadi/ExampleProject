@@ -159,25 +159,76 @@ FKey UIndependentInputSubsystem::CreateDevicePairedKey(const FJoystickDeviceKeyM
 		PairedKeyName = FSDLInputUtils::SanitizeDisplayName(PairedKeyDisplayName).ToString();
 	}
 	
-	FName CategoryName = FSDLInputUtils::SanitizeDisplayName(DeviceName);
+	const FString KeyName = MappingId + PairedKeyName;
+	const FKey NewKey = FKey(*KeyName);
+	const TSharedPtr<FKeyDetails> ExistingKeyDetails = EKeys::GetKeyDetails(NewKey);
+	if (ExistingKeyDetails)
+	{
+		const EKeys::FPairedKeyDetails* ExistingPair = EKeys::GetPairedKeyDetails(NewKey);
+		const FKey ExistingKeyX = ExistingPair && ExistingPair->XKeyDetails.IsValid()
+			? ExistingPair->XKeyDetails->GetKey()
+			: FKey();
+		const FKey ExistingKeyY = ExistingPair && ExistingPair->YKeyDetails.IsValid()
+			? ExistingPair->YKeyDetails->GetKey()
+			: FKey();
+
+		if (ExistingKeyX != RuntimeKeyX || ExistingKeyY != RuntimeKeyY)
+		{
+			UE_LOG(
+				LogIndependentInput,
+				Warning,
+				TEXT("Failed to register paired key [%s] for [%s]: existing components [%s, %s] do not match requested components [%s, %s]."),
+				*NewKey.ToString(),
+				*DeviceName,
+				*ExistingKeyX.ToString(),
+				*ExistingKeyY.ToString(),
+				*RuntimeKeyX.ToString(),
+				*RuntimeKeyY.ToString());
+			return FKey();
+		}
+
+		return NewKey;
+	}
+
+	if (RuntimeKeyX == RuntimeKeyY)
+	{
+		UE_LOG(
+			LogIndependentInput,
+			Warning,
+			TEXT("Failed to register paired key [%s] for [%s]: X and Y both use component key [%s]."),
+			*NewKey.ToString(),
+			*DeviceName,
+			*RuntimeKeyX.ToString());
+		return FKey();
+	}
+
+	if (KeyXDetails->GetPairedAxis() != EPairedAxis::Unpaired
+		|| KeyYDetails->GetPairedAxis() != EPairedAxis::Unpaired)
+	{
+		UE_LOG(
+			LogIndependentInput,
+			Warning,
+			TEXT("Failed to register paired key [%s] for [%s]: component keys [%s, %s] must both be unpaired."),
+			*NewKey.ToString(),
+			*DeviceName,
+			*RuntimeKeyX.ToString(),
+			*RuntimeKeyY.ToString());
+		return FKey();
+	}
+
+	const FName CategoryName = FSDLInputUtils::SanitizeDisplayName(DeviceName);
 	if (!RegisteredKeyCategories.Contains(CategoryName))
 	{
 		EKeys::AddMenuCategoryDisplayInfo(CategoryName, FText::FromString(DeviceName), TEXT("GraphEditor.PadEvent_16x"));
 		RegisteredKeyCategories.Add(CategoryName);
 	}
 
-	FString KeyName = MappingId + PairedKeyName;
-	const FKey NewKey = FKey(*KeyName);
-	const TSharedPtr<FKeyDetails> ExistingKeyDetails = EKeys::GetKeyDetails(NewKey);
-	if (!ExistingKeyDetails)
-	{
-		uint32 KeyFlags = FKeyDetails::GamepadKey | FKeyDetails::Axis2D;
-		if (bUpdateAxisWithoutSamples)
-			KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
+	uint32 KeyFlags = FKeyDetails::GamepadKey | FKeyDetails::Axis2D;
+	if (bUpdateAxisWithoutSamples)
+		KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
 
-		FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(PairedKeyDisplayName), KeyFlags, CategoryName);
-		EKeys::AddPairedKey(NewKeyDetails, RuntimeKeyX, RuntimeKeyY);
-	}
+	const FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(PairedKeyDisplayName), KeyFlags, CategoryName);
+	EKeys::AddPairedKey(NewKeyDetails, RuntimeKeyX, RuntimeKeyY);
 	
 	return NewKey;
 }
