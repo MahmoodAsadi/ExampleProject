@@ -229,6 +229,8 @@ void FDualSenseWindows::Close()
 {
 	if (DeviceHandle != INVALID_HANDLE_VALUE)
 	{
+		ClearAdaptiveTriggerEffect(EDualSenseTrigger::Left);
+		ClearAdaptiveTriggerEffect(EDualSenseTrigger::Right);
 		CloseHandle(DeviceHandle);
 		DeviceHandle = INVALID_HANDLE_VALUE;
 	}
@@ -434,7 +436,7 @@ bool FDualSenseWindows::WriteEffects()
 
             if (!Result)
             {
-                UE_LOG(LogIndependentInput, Warning, TEXT("USB WriteFile failed (%d)"), GetLastError());
+                UE_LOG(LogIndependentInput, Log, TEXT("USB WriteFile failed (%d)"), GetLastError());
                 return false;
             }
 
