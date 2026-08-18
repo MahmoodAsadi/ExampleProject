@@ -30,11 +30,11 @@ public:
 
 	void DevicePluggedIn(FJoystickDeviceInfo& DeviceInfo, const FSDLJoystickDevice& SDLDevice, const FJoystickDeviceKeyMapping& DeviceMapping);
 	void DeviceUnplugged(const FJoystickDeviceInfo& DeviceInfo);
-	void HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 Button, const bool bPressed);
-	void HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 Axis, const float Value);
-	void HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 Hat, const uint8 Value);
-	void HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 Ball, const float XRel, const float YRel);
-	void HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 Touchpad, int32 Finger, bool bTouched, float X, float Y, float Pressure);
+	void HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 ButtonIndex, const bool bPressed);
+	void HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 AxisIndex, const float Value);
+	void HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 HatIndex, const uint8 Value);
+	void HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 BallIndex, const float XRel, const float YRel);
+	void HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y, float Pressure);
 	void HandleSensorEvent(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType, const FVector& Value);
 	
 	bool SetAdaptiveTriggerResistance(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 Force);
@@ -60,6 +60,7 @@ private:
 	void SetGyroscopeSensorEnable(bool bEnable);
 	FString GetDeviceHardwareDeviceIdentifier(const FJoystickDeviceInfo& DeviceInfo) const;
 	FJoystickDeviceState CreateDeviceState(FJoystickDeviceInfo& DeviceInfo, const FJoystickDeviceKeyMapping& InKeyMapping);
+	void ResetDeviceState(const FInputDeviceInstanceId& DeviceId);
 	void UpdateVirtualButtons(FAxisState* AxisState);
 	void HandleButtonState(FButtonState& ButtonState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleAxisState(FAxisState& AxisState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
@@ -68,8 +69,6 @@ private:
 	void HandleTouchFingerState(FTouchFingerState& FingerState, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleSensorState(TMap<EDeviceSensorType, FSensorState>& Sensors, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId);
 	void HandleForceFeedback(FForceFeedbackState& ForceFeedbackState, const FInputDeviceInstanceId& DeviceId);
-
-	void ResetSensorState(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType SensorType);
 
 	TInputDeviceMap<FInputDeviceInstanceId> InternalDeviceIdMappings;
 	TSharedRef<FGenericApplicationMessageHandler> MessageHandler;

@@ -43,16 +43,16 @@ void FIndependentInputDevice::SendControllerEvents()
 			HandleAxisState(AxisState.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
 		}
 
-		// Handle Balls
-		for (TPair<int32, FBallState>& BallState : DeviceState.Balls)
-		{
-			HandleBallState(BallState.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
-		}
-
 		// Handle Hats
 		for (TPair<int32, FHatState>& HatPair : DeviceState.Hats)
 		{
 			HandleHatState(HatPair.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
+		}
+
+		// Handle Balls
+		for (TPair<int32, FBallState>& BallState : DeviceState.Balls)
+		{
+			HandleBallState(BallState.Value, DeviceState.PlatformUserId, DeviceState.InputDeviceId);
 		}
 
 		for (TPair<int32, FTouchpadState>& TouchpadPair : DeviceState.Touchpads)
@@ -195,6 +195,7 @@ void FIndependentInputDevice::DeviceUnplugged(const FJoystickDeviceInfo& DeviceI
 	if (!DeviceInfos.Contains(DeviceInfo.InstanceId))
 		return;
 
+	ResetDeviceState(DeviceInfo.InstanceId);
 	IPlatformInputDeviceMapper& DeviceMapper = IPlatformInputDeviceMapper::Get();
 	const FInputDeviceId& InputDeviceId = DeviceStates[DeviceInfo.InstanceId].InputDeviceId;
 	const FPlatformUserId NewUserToAssign = DeviceMapper.GetUserForUnpairedInputDevices();
@@ -206,26 +207,26 @@ void FIndependentInputDevice::DeviceUnplugged(const FJoystickDeviceInfo& DeviceI
 	SDLDevices.Remove(DeviceInfo.InstanceId);
 }
 
-void FIndependentInputDevice::HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 Button, const bool bPressed)
+void FIndependentInputDevice::HandleButtonEvent(const FInputDeviceInstanceId& DeviceId, const int32 ButtonIndex, const bool bPressed)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
 		return;
 
-	FButtonState* ButtonState = DeviceState->Buttons.Find(Button);
+	FButtonState* ButtonState = DeviceState->Buttons.Find(ButtonIndex);
 	if (!ButtonState)
 		return;
 
 	ButtonState->Update(bPressed);
 }
 
-void FIndependentInputDevice::HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 Axis, const float Value)
+void FIndependentInputDevice::HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 AxisIndex, const float Value)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
 		return;
 
-	FAxisState* AxisState = DeviceState->Axes.Find(Axis);
+	FAxisState* AxisState = DeviceState->Axes.Find(AxisIndex);
 	if (!AxisState)
 		return;
 
@@ -233,46 +234,46 @@ void FIndependentInputDevice::HandleAxisEvent(const FInputDeviceInstanceId& Devi
 	UpdateVirtualButtons(AxisState);
 }
 
-void FIndependentInputDevice::HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 Hat, const uint8 Value)
+void FIndependentInputDevice::HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 HatIndex, const uint8 Value)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
 		return;
 
-	FHatState* HatState = DeviceState->Hats.Find(Hat);
+	FHatState* HatState = DeviceState->Hats.Find(HatIndex);
 	if (!HatState)
 		return;
 
 	HatState->Update(Value);
 }
 
-void FIndependentInputDevice::HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 Ball, const float XRel, const float YRel)
+void FIndependentInputDevice::HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 BallIndex, const float XRel, const float YRel)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
 		return;
 
-	FBallState* BallState = DeviceState->Balls.Find(Ball);
+	FBallState* BallState = DeviceState->Balls.Find(BallIndex);
 	if (!BallState)
 		return;
 
 	BallState->Accumulate(XRel, YRel);
 }
 
-void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 Touchpad, int32 Finger, bool bTouched, float X, float Y, float Pressure)
+void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y, float Pressure)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
 		return;
 
-	FTouchpadState* TouchpadState = DeviceState->Touchpads.Find(Touchpad);
+	FTouchpadState* TouchpadState = DeviceState->Touchpads.Find(TouchpadIndex);
 	if (!TouchpadState)
 		return;
 
-	if (!TouchpadState->FingersState.IsValidIndex(Finger))
+	if (!TouchpadState->FingersState.IsValidIndex(FingerIndex))
 		return;
 
-	TouchpadState->FingersState[Finger].Update(bTouched, X, Y, Pressure);
+	TouchpadState->FingersState[FingerIndex].Update(bTouched, X, Y, Pressure);
 }
 
 void FIndependentInputDevice::HandleSensorEvent(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType, const FVector& Value)
@@ -550,7 +551,7 @@ void FIndependentInputDevice::SetAccelerometerSensorEnable(bool bEnable)
 				case EDeviceSensorType::Accelerometer:
 				case EDeviceSensorType::LeftAccelerometer:
 				case EDeviceSensorType::RightAccelerometer:
-					ResetSensorState(DeviceState.Key, SensorState.Key);
+					HandleSensorEvent(DeviceState.Key, SensorState.Key, FVector::ZeroVector);
 				break;
 			}
 		}
@@ -595,7 +596,7 @@ void FIndependentInputDevice::SetGyroscopeSensorEnable(bool bEnable)
 				case EDeviceSensorType::Gyroscope:
 				case EDeviceSensorType::LeftGyroscope:
 				case EDeviceSensorType::RightGyroscope:
-					ResetSensorState(DeviceState.Key, SensorState.Key);
+					HandleSensorEvent(DeviceState.Key, SensorState.Key, FVector::ZeroVector);
 				break;
 			}
 		}
@@ -737,6 +738,68 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(FJoystickDeviceI
 	}
 	
 	return State;
+}
+
+void FIndependentInputDevice::ResetDeviceState(const FInputDeviceInstanceId& DeviceId)
+{
+	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
+	if (!DeviceState)
+		return;
+
+	// Reset Buttons
+	for (const TPair<int32, FButtonState>& ButtonState : DeviceState->Buttons)
+	{
+		HandleButtonEvent(DeviceId, ButtonState.Key, false);
+		HandleButtonState(DeviceState->Buttons[ButtonState.Key], DeviceState->PlatformUserId, DeviceState->InputDeviceId);
+	}
+
+	// Reset Axis
+	for (TPair<int32, FAxisState>& AxisState : DeviceState->Axes)
+	{
+		FAxisState& State = AxisState.Value;
+		const float NeutralInputValue = State.bRemap
+			? FMath::GetMappedRangeValueClamped(State.OutputRange.Get2DValue(), State.InputRange.Get2DValue(), State.DeadZoneCenter)
+			: State.DeadZoneCenter;
+
+		State.Update(NeutralInputValue);
+		for (FAxisVirtualButtonState& VirtualButton : State.VirtualButtons)
+		{
+			VirtualButton.ButtonState.Update(false);
+		}
+
+		HandleAxisState(State, DeviceState->PlatformUserId, DeviceState->InputDeviceId);
+	}
+
+	// Reset Hats
+	for (const TPair<int32, FHatState>& HatState : DeviceState->Hats)
+	{
+		HandleHatEvent(DeviceId, HatState.Key, SDL_HAT_CENTERED);
+		HandleHatState(DeviceState->Hats[HatState.Key], DeviceState->PlatformUserId, DeviceState->InputDeviceId);
+	}
+
+	// Reset Touchpads
+	for (const TPair<int32, FTouchpadState>& TouchpadState : DeviceState->Touchpads)
+	{
+		for (int32 FingerIndex = 0; FingerIndex < TouchpadState.Value.FingersState.Num(); FingerIndex++)
+		{
+			HandleTouchpadEvent(DeviceId, TouchpadState.Key, FingerIndex, false, 0.0f, 0.0f, 0.0f);
+			HandleTouchFingerState(DeviceState->Touchpads[TouchpadState.Key].FingersState[FingerIndex],
+				DeviceState->PlatformUserId, DeviceState->InputDeviceId);
+		}
+	}
+
+	// Reset Sensors
+	for (const TPair<EDeviceSensorType, FSensorState> SensorState : DeviceState->Sensors)
+	{
+		HandleSensorEvent(DeviceId, SensorState.Key, FVector::ZeroVector);
+	}
+
+	HandleSensorState(DeviceState->Sensors, DeviceState->PlatformUserId, DeviceState->InputDeviceId);
+
+	// Reset ForceFeedback
+	DeviceState->ForceFeedback = FForceFeedbackState();
+	DeviceState->ForceFeedback.bDirty = true;
+	HandleForceFeedback(DeviceState->ForceFeedback, DeviceId);
 }
 
 void FIndependentInputDevice::UpdateVirtualButtons(FAxisState* AxisState)
@@ -936,19 +999,6 @@ void FIndependentInputDevice::HandleForceFeedback(FForceFeedbackState& ForceFeed
 	ForceFeedbackState.LastLowFrequency = Low;
 	ForceFeedbackState.LastHighFrequency = High;
 	ForceFeedbackState.bDirty = false;
-}
-
-void FIndependentInputDevice::ResetSensorState(const FInputDeviceInstanceId& DeviceId, EDeviceSensorType SensorType)
-{
-	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
-	if (!DeviceState)
-		return;
-
-	FSensorState* SensorState = DeviceState->Sensors.Find(SensorType);
-	if (!SensorState)
-		return;
-
-	SensorState->Update(FVector::ZeroVector);
 }
 
 #undef LOCTEXT_NAMESPACE
