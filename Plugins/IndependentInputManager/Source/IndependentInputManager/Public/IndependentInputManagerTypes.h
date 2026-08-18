@@ -813,19 +813,19 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickTouchpadFingerKeyMapping
 
 public:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Touchpad)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Finger)
 	int32 FingerIndex = INDEX_NONE;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Touchpad)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
 	FIndependentInputKey Touch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Touchpad)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
 	FIndependentInputKey PositionX;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Touchpad)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
 	FIndependentInputKey PositionY;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Touchpad)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
 	FIndependentInputKey Pressure;
 
 };
@@ -838,10 +838,10 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickTouchpadKeyMapping
 
 public:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Touchpad)
 	int32 TouchpadIndex = INDEX_NONE;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Touchpad, EditFixedSize, meta = (EditFixedOrder))
 	TArray<FJoystickTouchpadFingerKeyMapping> Fingers;
 };
 
