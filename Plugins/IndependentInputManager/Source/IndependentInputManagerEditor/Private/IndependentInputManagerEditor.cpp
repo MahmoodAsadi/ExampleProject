@@ -2,8 +2,8 @@
 
 #include "IndependentInputManagerEditor.h"
 
-#include "ToolMenus.h"
 #include "PropertyEditorModule.h"
+#include "ToolMenus.h"
 #include "Widgets/Docking/SDockTab.h"
 
 #include "IndependentInputEditorSubsystem.h"
@@ -51,19 +51,36 @@ TSharedRef<SDockTab> FIndependentInputManagerEditorModule::SpawnInputDeviceManag
 
 void FIndependentInputManagerEditorModule::RegisterMenus()
 {
-	UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu(TEXT("LevelEditor.MainMenu.Tools"));
-	FToolMenuSection& Section = ToolsMenu->FindOrAddSection(TEXT("IndependentInputManager"));
+	FToolMenuOwnerScoped OwnerScoped(this);
 
-	Section.AddMenuEntry(
+	const FText InputDeviceManagerLabel = LOCTEXT("InputDeviceManagerTabLabel", "Input Device Manager");
+	const FText InputDeviceManagerTooltip = LOCTEXT("InputDeviceManagerTabTooltipLabel", "Open the Independent Input Device Manager.");
+	const FSlateIcon InputDeviceManagerIcon(FAppStyle::GetAppStyleSetName(), "GraphEditor.PadEvent_16x");
+	const FUIAction OpenInputDeviceManagerAction(FExecuteAction::CreateLambda([]
+		{
+			FGlobalTabmanager::Get()->TryInvokeTab(InputManagerTabId);
+		}));
+
+	UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu(TEXT("LevelEditor.MainMenu.Tools"));
+	FToolMenuSection& ToolsSection = ToolsMenu->FindOrAddSection(TEXT("IndependentInputManager"));
+
+	ToolsSection.AddMenuEntry(
 		TEXT("OpenInputDeviceManager"),
-		LOCTEXT("InputDeviceManagerTabLabel", "Input Device Manager"),
-		LOCTEXT("InputDeviceManagerTabTooltipLabel", "Open the Independent Input Device Manager."),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "GraphEditor.PadEvent_16x"),
-		FUIAction(FExecuteAction::CreateLambda([]
-			{
-				FGlobalTabmanager::Get()->TryInvokeTab(InputManagerTabId);
-			}))
+		InputDeviceManagerLabel,
+		InputDeviceManagerTooltip,
+		InputDeviceManagerIcon,
+		OpenInputDeviceManagerAction
 	);
+
+	UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu(TEXT("LevelEditor.LevelEditorToolBar.User"));
+	FToolMenuSection& ToolbarSection = ToolbarMenu->FindOrAddSection(TEXT("IndependentInputManager"));
+
+	ToolbarSection.AddEntry(FToolMenuEntry::InitToolBarButton(
+		TEXT("OpenInputDeviceManagerToolbar"),
+		OpenInputDeviceManagerAction,
+		InputDeviceManagerLabel,
+		InputDeviceManagerTooltip,
+		InputDeviceManagerIcon));
 }
 
 void FIndependentInputManagerEditorModule::RegisterPropertyLayout() const
