@@ -318,12 +318,6 @@ void UIndependentInputManagerSettings::SetIgnoreSteamInputDevices(bool bIgnore)
 	TryUpdateDefaultConfigFile();
 }
 
-void UIndependentInputManagerSettings::SetIgnoreVirtualInputDevices(bool bIgnore)
-{
-	bIgnoreVirtualDevices = bIgnore;
-	TryUpdateDefaultConfigFile();
-}
-
 void UIndependentInputManagerSettings::SetForceAllDevicesForSingleUser(bool bNewState)
 {
 	bForceAllDevicesForSingleUser = bNewState;

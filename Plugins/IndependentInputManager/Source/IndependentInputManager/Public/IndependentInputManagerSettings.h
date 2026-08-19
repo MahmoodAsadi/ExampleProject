@@ -119,14 +119,12 @@ public:
 	void GenerateDevicesRuntimeKeys();
 	bool GetIgnoreXInputDevices() const { return bIgnoreXInputDevices; }
 	bool GetIgnoreSteamInputDevices() const { return bIgnoreSteamInputDevices; }
-	bool GetIgnoreVirtualDevices() const { return bIgnoreVirtualDevices; }
 	bool GetForceDevicesForSingleUser() const { return bForceAllDevicesForSingleUser; }
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> GetDevicesKeyMapping() const { return DevicesKeyMapping; }
 
 #if WITH_EDITOR
 	void SetIgnoreXInputDevices(bool bIgnore);
 	void SetIgnoreSteamInputDevices(bool bIgnore);
-	void SetIgnoreVirtualInputDevices(bool bIgnore);
 	void SetForceAllDevicesForSingleUser(bool bNewState);
 	void SetUseDeviceNameAsHardwareDeviceIdentifier(bool bNewState);
 #endif // WITH_EDITOR
@@ -169,10 +167,6 @@ protected:
 	 */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
 	bool bIgnoreSteamInputDevices = true;
-
-	/** Completely exclude SDL virtual devices from discovery, profiles, delegates, and gameplay input. */
-	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
-	bool bIgnoreVirtualDevices = true;
 
 	/** Maps every plugin-owned input device to Unreal's primary platform user. Disable this if your game is local splitscreen multiplayer */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")

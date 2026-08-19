@@ -42,9 +42,6 @@ private:
 	ECheckBoxState GetIgnoreSteamInputDevices() const;
 	void OnIgnoreSteamInputDevicesChange(ECheckBoxState NewState);
 
-	ECheckBoxState GetIgnoreVirtualInputDevices() const;
-	void OnIgnoreVirtualInputDevicesChange(ECheckBoxState NewState);
-	
 	ECheckBoxState GetForceAllDevicesForSingleUser() const;
 	void OnForceAllDevicesForSingleUserChange(ECheckBoxState NewState);
 

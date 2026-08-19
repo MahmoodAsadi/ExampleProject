@@ -1190,14 +1190,11 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	if (ConnectedDevices.Contains(DeviceId))
 		return false;
 
-	const bool bIsVirtualDevice = SDL_IsJoystickVirtual(InstanceId);
-	if (UIndependentInputManagerSettings::Get()->GetIgnoreVirtualDevices() && bIsVirtualDevice)
+	if (SDL_IsJoystickVirtual(InstanceId))
 	{
 		IgnoredDeviceIds.Add(DeviceId);
 		return false;
 	}
-
-	IgnoredDeviceIds.Remove(DeviceId);
 
 	FSDLJoystickDevice SDLDevice;
 	SDLDevice.bIsGamepad = SDL_IsGamepad(InstanceId);
@@ -1241,9 +1238,10 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 		return false;
 	}
 
+	const char* RawDevicePath = SDL_GetJoystickPathForID(InstanceId);
+	SDLDevice.DevicePath = RawDevicePath ? UTF8_TO_TCHAR(RawDevicePath) : FString();
 	SDLDevice.bIsDualSense = FSDLInputUtils::IsDualSense(SDLDevice.Joystick);
 	SDLDevice.InstanceId = DeviceId;
-	DeviceInfo.bIsVirtualDevice = bIsVirtualDevice;
 
 	if (SDLDevice.bIsGamepad)
 	{
@@ -1330,6 +1328,7 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	UE_LOG(LogIndependentInput, Log, TEXT("\tSupports Adaptive Trigger Effects: %s"), *FString(bSupportsAdaptiveTriggerEffects ? "Yes" : "No"));
 	UE_LOG(LogIndependentInput, Log, TEXT("\tConnection Type: %s"), *UEnum::GetDisplayValueAsText(DeviceInfo.ConnectionType).ToString());
 	UE_LOG(LogIndependentInput, Log, TEXT("\tBattery State: %s"), *UEnum::GetDisplayValueAsText(DeviceInfo.BatteryState).ToString());
+	UE_LOG(LogIndependentInput, Log, TEXT("\tDevice Path: %s"), *SDLDevice.DevicePath);
 
 	UIndependentInputManagerSettings::GetMutable()->DevicePluggedIn(DeviceInfo);
 	OnDevicePluggedIn.Broadcast(DeviceInfo, SDLDevice);

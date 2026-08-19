@@ -390,9 +390,6 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceInfo
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device", meta = (EditCondition = "Type == EJoystickDeviceType::Gamepad", EditConditionHides))
 	EGamepadType GamepadType = EGamepadType::Unknown;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device")
-	bool bIsVirtualDevice = false;
-
 	/** Name of the input profile used to map this device. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device")
 	FName MappingId;
@@ -543,6 +540,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Device)
 	bool bIsDualSense = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Device)
+	FString DevicePath;
 };
 
 

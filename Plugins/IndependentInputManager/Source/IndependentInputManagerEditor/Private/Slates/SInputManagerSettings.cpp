@@ -294,20 +294,6 @@ void SInputManagerSettings::OnIgnoreSteamInputDevicesChange(ECheckBoxState NewSt
 		InputManagerSettings->SetIgnoreSteamInputDevices(NewState == ECheckBoxState::Checked ? true : false);
 }
 
-ECheckBoxState SInputManagerSettings::GetIgnoreVirtualInputDevices() const
-{
-	if (const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get())
-		return InputManagerSettings->GetIgnoreVirtualDevices() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-
-	return ECheckBoxState::Unchecked;
-}
-
-void SInputManagerSettings::OnIgnoreVirtualInputDevicesChange(ECheckBoxState NewState)
-{
-	if (UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable())
-		InputManagerSettings->SetIgnoreVirtualInputDevices(NewState == ECheckBoxState::Checked ? true : false);
-}
-
 ECheckBoxState SInputManagerSettings::GetForceAllDevicesForSingleUser() const
 {
 	if (const UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::Get())
