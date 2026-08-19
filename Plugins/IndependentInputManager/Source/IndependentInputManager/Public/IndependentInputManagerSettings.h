@@ -174,7 +174,7 @@ protected:
 	UPROPERTY(Config, EditAnywhere, Category = "Device Filtering")
 	bool bIgnoreVirtualDevices = true;
 
-	/** Maps every plugin-owned input device to Unreal's primary platform user. Disable this if your game is splitscreen multiplayer */
+	/** Maps every plugin-owned input device to Unreal's primary platform user. Disable this if your game is local splitscreen multiplayer */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")
 	bool bForceAllDevicesForSingleUser = false;
 

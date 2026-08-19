@@ -480,6 +480,10 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceInfo
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
 	FPlatformUserId PlatformUserId;
 
+	/** Whether Independent Input Manager owns this connected device and produces gameplay input for it. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
+	bool bUseIndependentInputAPI = true;
+
 	bool IsValid() const
 	{
 		return Identifier.IsValid();

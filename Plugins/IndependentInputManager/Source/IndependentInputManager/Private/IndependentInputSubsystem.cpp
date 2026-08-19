@@ -1362,6 +1362,7 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 
 		FJoystickDeviceKeyMapping DeviceMapping = *StoredDeviceMapping;
 		ApplyInputOwnershipPolicy(DeviceInfo, DeviceMapping);
+		DeviceInfo.bUseIndependentInputAPI = DeviceMapping.bUseIndependentInputAPI;
 
 		if (DeviceMapping.bUseIndependentInputAPI)
 			ConnectedDevicesMappings.Add(DeviceInfo.InstanceId, MoveTemp(DeviceMapping));
@@ -1372,7 +1373,8 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 	FJoystickDeviceKeyMapping DeviceKeyMapping(DeviceInfo.MappingId, DeviceInfo.DeviceName);
 	RefreshDeviceFeatureSupport(DeviceInfo, SDLDevice, DeviceKeyMapping);
 	ApplyInputOwnershipPolicy(DeviceInfo, DeviceKeyMapping);
-	if (!DeviceKeyMapping.bUseIndependentInputAPI)
+	DeviceInfo.bUseIndependentInputAPI = DeviceKeyMapping.bUseIndependentInputAPI;
+	if (!DeviceInfo.bUseIndependentInputAPI)
 		return;
 	
 	
