@@ -61,6 +61,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	bool IsDeviceConnected(FInputDeviceInstanceId DeviceId) const;
 
+	/** Returns whether the connected device is currently owned by Independent Input Manager. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool IsDeviceOwnedByIndependentInputManager(FInputDeviceInstanceId DeviceId) const;
+
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	int32 GetConnectedDeviceCount() const { return ConnectedDevices.Num(); }
 	

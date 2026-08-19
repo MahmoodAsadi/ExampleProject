@@ -178,7 +178,8 @@ bool UIndependentInputManagerSettings::SetAdaptiveTriggerEffectsEnable(const FJo
 		{
 			for (const FJoystickDeviceInfo& DeviceInfo : ConnectedDevices)
 			{
-				if (DeviceInfo.Identifier == DeviceIdentifier)
+				if (DeviceInfo.Identifier == DeviceIdentifier
+					&& InputSubsystem->IsDeviceOwnedByIndependentInputManager(DeviceInfo.InstanceId))
 				{
 					InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
 					InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
@@ -253,8 +254,11 @@ void UIndependentInputManagerSettings::SetAdaptiveTriggerEffectsEnableForAllDevi
 	{
 		for (const FJoystickDeviceInfo& DeviceInfo : ConnectedDevices)
 		{
-			InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
-			InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
+			if (InputSubsystem->IsDeviceOwnedByIndependentInputManager(DeviceInfo.InstanceId))
+			{
+				InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Left);
+				InputSubsystem->ClearAdaptiveTriggerEffect(DeviceInfo.InstanceId, EDualSenseTrigger::Right);
+			}
 		}
 	}
 
