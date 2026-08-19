@@ -301,6 +301,38 @@ void UIndependentInputManagerSettings::GenerateDevicesRuntimeKeys()
 	}
 }
 
+#if WITH_EDITOR
+void UIndependentInputManagerSettings::SetIgnoreXInputDevices(bool bIgnore)
+{
+	bIgnoreXInputDevices = bIgnore;
+	TryUpdateDefaultConfigFile();
+}
+
+void UIndependentInputManagerSettings::SetIgnoreSteamInputDevices(bool bIgnore)
+{
+	bIgnoreSteamInputDevices = bIgnore;
+	TryUpdateDefaultConfigFile();
+}
+
+void UIndependentInputManagerSettings::SetIgnoreVirtualInputDevices(bool bIgnore)
+{
+	bIgnoreVirtualDevices = bIgnore;
+	TryUpdateDefaultConfigFile();
+}
+
+void UIndependentInputManagerSettings::SetForceAllDevicesForSingleUser(bool bNewState)
+{
+	bForceAllDevicesForSingleUser = bNewState;
+	TryUpdateDefaultConfigFile();
+}
+
+void UIndependentInputManagerSettings::SetUseDeviceNameAsHardwareDeviceIdentifier(bool bNewState)
+{
+	bUseDeviceNameAsHardwareDeviceIdentifier = bNewState;
+	TryUpdateDefaultConfigFile();
+}
+#endif // WITH_EDITOR
+
 void UIndependentInputManagerSettings::SetAccelerometerSensorEnable(bool bEnable)
 {
 	if (bEnableAccelerometer == bEnable)

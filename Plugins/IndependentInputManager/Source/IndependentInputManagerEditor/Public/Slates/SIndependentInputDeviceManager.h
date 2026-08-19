@@ -11,6 +11,7 @@
 class SButton;
 class SConnectedDeviceInfo;
 class SDeviceKeyMapping;
+class SInputManagerSettings;
 class SWidgetSwitcher;
 
 /**
@@ -43,15 +44,18 @@ private:
 
 	FReply ConnectedDevicesButtonClicked();
 	FReply KeyMappingButtonClicked();
+	FReply InputManagerSettingsClicked();
 
 	void RefreshWindow();
 	void UpdateTabButtons();
 
 	TSharedPtr<SButton> ConnectedDevicesButton;
 	TSharedPtr<SButton> KeyMappingButton;
+	TSharedPtr<SButton> InputSettingsButton;
 	TSharedPtr<SWidgetSwitcher> ContentWidgetSwitcher;
 	TSharedPtr<SConnectedDeviceInfo> ConnectedDeviceTab;
 	TSharedPtr<SDeviceKeyMapping> KeyMappingTab;
+	TSharedPtr<SInputManagerSettings> InputManagerSettingsTab;
 	int32 SelectedTabIndex = INDEX_NONE;
 
 	FButtonStyle DefaultStyle;

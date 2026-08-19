@@ -123,6 +123,15 @@ public:
 	bool GetForceDevicesForSingleUser() const { return bForceAllDevicesForSingleUser; }
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> GetDevicesKeyMapping() const { return DevicesKeyMapping; }
 
+#if WITH_EDITOR
+	void SetIgnoreXInputDevices(bool bIgnore);
+	void SetIgnoreSteamInputDevices(bool bIgnore);
+	void SetIgnoreVirtualInputDevices(bool bIgnore);
+	void SetForceAllDevicesForSingleUser(bool bNewState);
+	void SetUseDeviceNameAsHardwareDeviceIdentifier(bool bNewState);
+#endif // WITH_EDITOR
+
+
 private:
 
 	/** Enables or disables Accelerometer sensor(s) (Accelerometer, LeftAccelerometer, RightAccelerometer). */

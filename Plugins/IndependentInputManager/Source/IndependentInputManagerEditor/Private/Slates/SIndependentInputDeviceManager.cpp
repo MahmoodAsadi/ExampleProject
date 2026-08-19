@@ -14,6 +14,7 @@
 #include "IndependentInputEditorSubsystem.h"
 #include "Slates/SConnectedDeviceInfo.h"
 #include "Slates/SDeviceKeyMapping.h"
+#include "Slates/SInputManagerSettings.h"
 
 #define LOCTEXT_NAMESPACE "SIndependentInputDeviceManager "
 
@@ -92,7 +93,21 @@ void SIndependentInputDeviceManager::Construct(const FArguments& InArgs)
 						SAssignNew(KeyMappingButton, SButton)
 						.OnClicked(this, &SIndependentInputDeviceManager::KeyMappingButtonClicked)
 						.ContentPadding(FMargin(0.0f, 5.0f, 20.0f, 5.0f))
-						.Text(LOCTEXT("ProfilesLabel", "Key Mappings"))
+						.Text(LOCTEXT("KeyMappingsLabel", "Key Mappings"))
+						.TextStyle(FAppStyle::Get(), "DialogButtonText")
+						.HAlign(HAlign_Left)
+					]
+
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					.VAlign(VAlign_Center)
+					.HAlign(HAlign_Fill)
+					.Padding(0.0f, 2.5f)
+					[
+						SAssignNew(InputSettingsButton, SButton)
+						.OnClicked(this, &SIndependentInputDeviceManager::InputManagerSettingsClicked)
+						.ContentPadding(FMargin(0.0f, 5.0f, 20.0f, 5.0f))
+						.Text(LOCTEXT("InputManagerSettingsLabel", "Settings"))
 						.TextStyle(FAppStyle::Get(), "DialogButtonText")
 						.HAlign(HAlign_Left)
 					]
@@ -105,6 +120,7 @@ void SIndependentInputDeviceManager::Construct(const FArguments& InArgs)
 			.FillWidth(1.0f)
 			[
 				SAssignNew(ContentWidgetSwitcher, SWidgetSwitcher)
+
 				+ SWidgetSwitcher::Slot()
 				[
 					SAssignNew(ConnectedDeviceTab, SConnectedDeviceInfo)
@@ -113,6 +129,11 @@ void SIndependentInputDeviceManager::Construct(const FArguments& InArgs)
 				+ SWidgetSwitcher::Slot()
 				[
 					SAssignNew(KeyMappingTab, SDeviceKeyMapping)
+				]
+
+				+ SWidgetSwitcher::Slot()
+				[
+					SAssignNew(InputManagerSettingsTab, SInputManagerSettings)
 				]
 			]
 		]
@@ -166,6 +187,13 @@ FReply SIndependentInputDeviceManager::KeyMappingButtonClicked()
 	return FReply::Handled();
 }
 
+FReply SIndependentInputDeviceManager::InputManagerSettingsClicked()
+{
+	SelectedTabIndex = 2;
+	RefreshWindow();
+	return FReply::Handled();
+}
+
 void SIndependentInputDeviceManager::RefreshWindow()
 {
 	UpdateTabButtons();
@@ -180,6 +208,7 @@ void SIndependentInputDeviceManager::UpdateTabButtons()
 {
 	ConnectedDevicesButton->SetButtonStyle(SelectedTabIndex == 0 ? &SelectedStyle : &DefaultStyle);
 	KeyMappingButton->SetButtonStyle(SelectedTabIndex == 1 ? &SelectedStyle : &DefaultStyle);
+	InputSettingsButton->SetButtonStyle(SelectedTabIndex == 2 ? &SelectedStyle : &DefaultStyle);
 }
 
 #undef LOCTEXT_NAMESPACE
