@@ -303,7 +303,7 @@ bool UIndependentInputSubsystem::FindDeviceInstanceIdForInputDevice(const FInput
 	return false;
 }
 
-bool UIndependentInputSubsystem::FindDeviceInstanceIdsForPlaformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const
+bool UIndependentInputSubsystem::FindDeviceInstanceIdsForPlatformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const
 {
 	OutInstanceIds.Empty();
 	if (!PlatformUserId.IsValid())
@@ -507,7 +507,7 @@ bool UIndependentInputSubsystem::PlayTriggerRumble(const FInputDeviceInstanceId&
 	return true;
 }
 
-bool UIndependentInputSubsystem::SupportsAddaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const
+bool UIndependentInputSubsystem::SupportsAdaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const
 {
 #if PLATFORM_WINDOWS
 	const FSDLJoystickDevice* JoystickDevice = SDLDevices.Find(DeviceId);
@@ -545,7 +545,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerResistance(const FInputDevice
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerResistance for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;
@@ -572,7 +572,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerWeapon(const FInputDeviceInst
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerWeapon for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;
@@ -599,7 +599,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerVibration(const FInputDeviceI
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerVibration for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;
@@ -626,7 +626,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerBow(const FInputDeviceInstanc
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerBow for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;
@@ -653,7 +653,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerGalloping(const FInputDeviceI
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerGalloping for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;
@@ -680,7 +680,7 @@ bool UIndependentInputSubsystem::SetAdaptiveTriggerMachine(const FInputDeviceIns
 		return false;
 	}
 
-	if (!SupportsAddaptiveTriggerEffects(DeviceId))
+	if (!SupportsAdaptiveTriggerEffects(DeviceId))
 	{
 		UE_LOG(LogIndependentInput, Log, TEXT("Failed to SetAdaptiveTriggerMachine for device %d: Device does not support adaptive trigger effects."), DeviceId.GetId());
 		return false;

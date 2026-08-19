@@ -79,7 +79,7 @@ public:
 	 * Finds all connected SDL instance IDs assigned to PlatformUserId.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
-	bool FindDeviceInstanceIdsForPlaformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const;
+	bool FindDeviceInstanceIdsForPlatformUser(const FPlatformUserId PlatformUserId, TArray<FInputDeviceInstanceId>& OutInstanceIds) const;
 
 
 	/** Returns whether the connected device supports rumble. */
@@ -136,7 +136,7 @@ public:
 	 * This currently requires a DualSense controller on Windows.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Force Feedback")
-	bool SupportsAddaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const;
+	bool SupportsAdaptiveTriggerEffects(const FInputDeviceInstanceId& DeviceId) const;
 
 	/**
 	 * Enables or disables adaptive-trigger effects in the connected device's profile.
