@@ -99,6 +99,9 @@ FKey UIndependentInputSubsystem::CreateDeviceKey(const FJoystickDeviceKeyMapping
 
 		if (bUpdateAxisWithoutSamples)
 			KeyFlags |= FKeyDetails::UpdateAxisWithoutSamples;
+
+		if (Key.bIsTouchKey)
+			KeyFlags |= FKeyDetails::Touch;
 		
 		FKeyDetails NewKeyDetails = FKeyDetails(NewKey, FText::FromString(Key.GetKeyDisplayName()), KeyFlags, CategoryName);
 		EKeys::AddKey(NewKeyDetails);
@@ -1632,10 +1635,10 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 						TouchpadInfo.TouchpadIndex + 1,
 						FingerIndex + 1);
 
-					FingerMapping.Touch = FIndependentInputKey(Prefix + TEXT(" Touch"), DeviceInfo.MappingId.ToString(), false);
-					FingerMapping.PositionX = FIndependentInputKey(Prefix + TEXT(" X-Axis"), DeviceInfo.MappingId.ToString(), true);
-					FingerMapping.PositionY = FIndependentInputKey(Prefix + TEXT(" Y-Axis"), DeviceInfo.MappingId.ToString(), true);
-					FingerMapping.Pressure = FIndependentInputKey(Prefix + TEXT(" Pressure"), DeviceInfo.MappingId.ToString(), true);
+					FingerMapping.Touch = FIndependentInputKey(Prefix + TEXT(" Touch"), DeviceInfo.MappingId.ToString(), false, true);
+					FingerMapping.PositionX = FIndependentInputKey(Prefix + TEXT(" X-Axis"), DeviceInfo.MappingId.ToString(), true, true);
+					FingerMapping.PositionY = FIndependentInputKey(Prefix + TEXT(" Y-Axis"), DeviceInfo.MappingId.ToString(), true, true);
+					FingerMapping.Pressure = FIndependentInputKey(Prefix + TEXT(" Pressure"), DeviceInfo.MappingId.ToString(), true, true);
 					TouchpadMapping.Fingers.Add(MoveTemp(FingerMapping));
 				}
 

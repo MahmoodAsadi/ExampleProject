@@ -569,11 +569,12 @@ public:
 	{
 	}
 
-	FIndependentInputKey(const FString& ByKeyName, const FString& InMappingId, bool bIsAxis)
+	FIndependentInputKey(const FString& ByKeyName, const FString& InMappingId, bool bIsAxis, bool bIsTouch = false)
 		: bCustomKey(true)
 		, KeyName(ByKeyName)
 		, MappingId(InMappingId)
 		, bIsAxisKey(bIsAxis)
+		, bIsTouchKey(bIsTouch)
 	{
 	}
 
@@ -595,6 +596,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Key, meta = (EditCondition = "bCustomKey", HideEditConditionToggle))
 	bool bIsAxisKey = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Key, meta = (EditCondition = "bCustomKey", HideEditConditionToggle))
+	bool bIsTouchKey = false;
 
 protected:
 
