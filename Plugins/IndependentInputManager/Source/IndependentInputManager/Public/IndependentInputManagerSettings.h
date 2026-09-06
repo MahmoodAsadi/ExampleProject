@@ -121,6 +121,7 @@ public:
 	bool GetIgnoreSteamInputDevices() const { return bIgnoreSteamInputDevices; }
 	bool GetForceDevicesForSingleUser() const { return bForceAllDevicesForSingleUser; }
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> GetDevicesKeyMapping() const { return DevicesKeyMapping; }
+	TMap<FString, FKey> GetSDLKeyMapping() const { return SDLKeyMaps; }
 
 #if WITH_EDITOR
 	void SetIgnoreXInputDevices(bool bIgnore);
@@ -179,6 +180,9 @@ protected:
 	/** Whether device(s) Gyroscope sensor should be enabled or not. */
 	UPROPERTY(Config, EditAnywhere, Category = "Device Settings")
 	bool bEnableGyroscope = false;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Key Mapping")
+	TMap<FString, FKey> SDLKeyMaps;
 
 	UPROPERTY(Config, VisibleAnywhere, Category = "Device Profile")
 	TMap<FJoystickDeviceIdentifier, FJoystickDeviceKeyMapping> DevicesKeyMapping;

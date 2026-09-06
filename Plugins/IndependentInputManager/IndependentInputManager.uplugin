@@ -1,10 +1,10 @@
-﻿{
+{
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "IndependentInputManager",
+	"FriendlyName": "Independent Input Manager",
 	"Description": "SDL3-powered joystick and gamepad input layer for Unreal Engine with unified multi-controller support.",
-	"Category": "Input",
+	"Category": "Input Devices",
 	"CreatedBy": "Mahmood",
 	"CreatedByURL": "",
 	"DocsURL": "",
@@ -30,6 +30,12 @@
 			"PlatformAllowList": [
 				"Win64"
 			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "EnhancedInput",
+			"Enabled": true
 		}
 	]
 }

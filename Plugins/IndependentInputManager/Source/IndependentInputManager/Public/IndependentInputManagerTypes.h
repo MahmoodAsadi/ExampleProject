@@ -481,6 +481,9 @@ struct INDEPENDENTINPUTMANAGER_API FJoystickDeviceInfo
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
 	bool bUseIndependentInputAPI = true;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|Status")
+	FString KeyMapping;
+
 	bool IsValid() const
 	{
 		return Identifier.IsValid();
@@ -832,9 +835,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
 	FIndependentInputKey PositionY;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Finger)
-	FIndependentInputKey Pressure;
 
 };
 
@@ -1336,12 +1336,10 @@ struct INDEPENDENTINPUTMANAGER_API FTouchFingerState
 	FTouchFingerState(
 		const FKey& InTouchKey,
 		const FKey& InXKey,
-		const FKey& InYKey,
-		const FKey& InPressureKey)
+		const FKey& InYKey)
 		: Touch(InTouchKey)
 		, X(InXKey)
 		, Y(InYKey)
-		, Pressure(InPressureKey)
 	{
 	}
 
@@ -1350,8 +1348,7 @@ struct INDEPENDENTINPUTMANAGER_API FTouchFingerState
 	{
 		return Touch.HasChanged()
 			|| X.HasChanged()
-			|| Y.HasChanged()
-			|| Pressure.HasChanged();
+			|| Y.HasChanged();
 	}
 
 	/** Returns true if any state is waiting to be committed. */
@@ -1359,17 +1356,15 @@ struct INDEPENDENTINPUTMANAGER_API FTouchFingerState
 	{
 		return Touch.IsPendingCommit()
 			|| X.IsPendingCommit()
-			|| Y.IsPendingCommit()
-			|| Pressure.IsPendingCommit();
+			|| Y.IsPendingCommit();
 	}
 
 	/** Updates the complete touch point state. */
-	void Update(bool bTouched, float InX, float InY, float InPressure)
+	void Update(bool bTouched, float InX, float InY)
 	{
 		Touch.Update(bTouched);
 		X.Update(InX);
 		Y.Update(InY);
-		Pressure.Update(InPressure);
 	}
 
 	/** Commits all pending state changes. */
@@ -1378,7 +1373,6 @@ struct INDEPENDENTINPUTMANAGER_API FTouchFingerState
 		Touch.Commit();
 		X.Commit();
 		Y.Commit();
-		Pressure.Commit();
 	}
 
 	/** True while the finger is touching the surface. */
@@ -1389,9 +1383,6 @@ struct INDEPENDENTINPUTMANAGER_API FTouchFingerState
 
 	/** Normalized Y position [0..1]. */
 	FAxisState Y;
-
-	/** Normalized pressure [0..1]. */
-	FAxisState Pressure;
 };
 
 
@@ -1625,6 +1616,7 @@ public:
 	static EDeviceBatteryState ConvertBatteryState(SDL_PowerState InState);
 	static FKey ConvertSDLButtonToKey(SDL_GamepadButton InButton);
 	static FKey ConvertSDLAxisToKey(SDL_GamepadAxis InAxis);
+	static FKey ConvertSDLRawMappingToKey(FString MappingKeyName);
 	static void PopulateSupportedSensors(SDL_Gamepad* Gamepad, FJoystickDeviceInfo& DeviceInfo);
 	static void PopulateSupportedFeatures(SDL_Joystick* Joystick, FJoystickDeviceInfo& DeviceInfo);
 	static EDeviceSensorType ConvertSensorType(Sint32 InType);

@@ -430,17 +430,12 @@ void UIndependentInputManagerSettings::GenerateRuntimeKeysForDeviceMapping(FJoys
 			if (Finger.PositionY.bCustomKey)
 				Finger.PositionY.bIsAxisKey = true;
 
-			if (Finger.Pressure.bCustomKey)
-				Finger.Pressure.bIsAxisKey = true;
-
 			Finger.Touch.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 			Finger.PositionX.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 			Finger.PositionY.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 
 			if (InputSubsystem && Finger.PositionX.GetKey().IsValid() && Finger.PositionY.GetKey().IsValid())
 				InputSubsystem->CreateDevicePairedKey(DeviceKeyMapping, Finger.PositionX, Finger.PositionY);
-
-			Finger.Pressure.GenerateRuntimeKeyIfNeeded(DeviceKeyMapping);
 		}
 	}
 

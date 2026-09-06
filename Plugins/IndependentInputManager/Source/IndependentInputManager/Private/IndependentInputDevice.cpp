@@ -260,7 +260,7 @@ void FIndependentInputDevice::HandleBallEvent(const FInputDeviceInstanceId& Devi
 	BallState->Accumulate(XRel, YRel);
 }
 
-void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y, float Pressure)
+void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y)
 {
 	FJoystickDeviceState* DeviceState = DeviceStates.Find(DeviceId);
 	if (!DeviceState)
@@ -273,7 +273,7 @@ void FIndependentInputDevice::HandleTouchpadEvent(const FInputDeviceInstanceId& 
 	if (!TouchpadState->FingersState.IsValidIndex(FingerIndex))
 		return;
 
-	TouchpadState->FingersState[FingerIndex].Update(bTouched, X, Y, Pressure);
+	TouchpadState->FingersState[FingerIndex].Update(bTouched, X, Y);
 }
 
 void FIndependentInputDevice::HandleSensorEvent(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType, const FVector& Value)
@@ -711,8 +711,7 @@ FJoystickDeviceState FIndependentInputDevice::CreateDeviceState(FJoystickDeviceI
 			TouchpadState.FingersState.Emplace(
 				FingerMapping.Touch.GetKey(),
 				FingerMapping.PositionX.GetKey(),
-				FingerMapping.PositionY.GetKey(),
-				FingerMapping.Pressure.GetKey());
+				FingerMapping.PositionY.GetKey());
 		}
 
 		State.Touchpads.Add(TouchpadPair.Key, MoveTemp(TouchpadState));
@@ -782,7 +781,7 @@ void FIndependentInputDevice::ResetDeviceState(const FInputDeviceInstanceId& Dev
 	{
 		for (int32 FingerIndex = 0; FingerIndex < TouchpadState.Value.FingersState.Num(); FingerIndex++)
 		{
-			HandleTouchpadEvent(DeviceId, TouchpadState.Key, FingerIndex, false, 0.0f, 0.0f, 0.0f);
+			HandleTouchpadEvent(DeviceId, TouchpadState.Key, FingerIndex, false, 0.0f, 0.0f);
 			HandleTouchFingerState(DeviceState->Touchpads[TouchpadState.Key].FingersState[FingerIndex],
 				DeviceState->PlatformUserId, DeviceState->InputDeviceId);
 		}
@@ -897,7 +896,6 @@ void FIndependentInputDevice::HandleTouchFingerState(FTouchFingerState& FingerSt
 	HandleButtonState(FingerState.Touch, PlatformUser, DeviceId);
 	HandleAxisState(FingerState.X, PlatformUser, DeviceId);
 	HandleAxisState(FingerState.Y, PlatformUser, DeviceId);
-	HandleAxisState(FingerState.Pressure, PlatformUser, DeviceId);
 }
 
 void FIndependentInputDevice::HandleSensorState(TMap<EDeviceSensorType, FSensorState>& Sensors, const FPlatformUserId& PlatformUser, const FInputDeviceId& DeviceId)

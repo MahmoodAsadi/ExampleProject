@@ -2,7 +2,14 @@
 
 #include "IndependentInputManagerEditor.h"
 
+#include "AssetToolsModule.h"
+#include "IAssetTools.h"
+#include "Misc/Paths.h"
 #include "PropertyEditorModule.h"
+#include "Styling/AppStyle.h"
+#include "Styling/SlateStyle.h"
+#include "Styling/SlateStyleMacros.h"
+#include "Styling/SlateStyleRegistry.h"
 #include "ToolMenus.h"
 #include "Widgets/Docking/SDockTab.h"
 
@@ -38,6 +45,7 @@ void FIndependentInputManagerEditorModule::ShutdownModule()
 
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(InputManagerTabId);
 	UnregisterPropertyLayout();
+
 }
 
 TSharedRef<SDockTab> FIndependentInputManagerEditorModule::SpawnInputDeviceManagerTab(const FSpawnTabArgs& SpawnTabArgs)

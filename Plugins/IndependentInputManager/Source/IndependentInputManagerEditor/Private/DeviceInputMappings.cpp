@@ -658,14 +658,6 @@ namespace
 						FingerSource + TEXT(", Position Y"),
 						ECustomKeyType::Axis1D,
 						KeyUses,
-						OutValidationError)
-					|| !AddInputKey(
-						DeviceIdentifier,
-						DeviceKeyMapping,
-						Finger.Pressure,
-						FingerSource + TEXT(", Pressure"),
-						ECustomKeyType::Axis1D,
-						KeyUses,
 						OutValidationError))
 				{
 					return false;

@@ -34,7 +34,7 @@ public:
 	void HandleAxisEvent(const FInputDeviceInstanceId& DeviceId, const int32 AxisIndex, const float Value);
 	void HandleHatEvent(const FInputDeviceInstanceId& DeviceId, const int32 HatIndex, const uint8 Value);
 	void HandleBallEvent(const FInputDeviceInstanceId& DeviceId, const int32 BallIndex, const float XRel, const float YRel);
-	void HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y, float Pressure);
+	void HandleTouchpadEvent(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, int32 FingerIndex, bool bTouched, float X, float Y);
 	void HandleSensorEvent(const FInputDeviceInstanceId& DeviceId, const EDeviceSensorType SensorType, const FVector& Value);
 	
 	bool SetAdaptiveTriggerResistance(const FInputDeviceInstanceId& DeviceId, EDualSenseTrigger Trigger, uint8 StartPosition, uint8 Force);

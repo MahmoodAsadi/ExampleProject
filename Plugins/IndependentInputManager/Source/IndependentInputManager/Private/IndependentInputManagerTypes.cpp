@@ -336,6 +336,17 @@ FKey FSDLInputUtils::ConvertSDLAxisToKey(SDL_GamepadAxis InAxis)
 	}
 }
 
+FKey FSDLInputUtils::ConvertSDLRawMappingToKey(FString MappingKeyName)
+{
+	if (const UIndependentInputManagerSettings* InputManager = UIndependentInputManagerSettings::Get())
+	{
+		if (FKey* FoundKey = InputManager->GetSDLKeyMapping().Find(MappingKeyName))
+			return *FoundKey;
+	}
+
+	return FKey(EKeys::Invalid);
+}
+
 void FSDLInputUtils::PopulateSupportedSensors(SDL_Gamepad* Gamepad, FJoystickDeviceInfo& DeviceInfo)
 {
 	if (SDL_GamepadHasSensor(Gamepad, SDL_SENSOR_ACCEL))

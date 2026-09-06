@@ -11,6 +11,7 @@
 
 #define LOCTEXT_NAMESPACE "UIndependentInputSubsystem"
 
+
 namespace
 {
 	constexpr SDL_InitFlags IndependentInputSubsystemFlags =
@@ -286,6 +287,14 @@ TArray<FJoystickDeviceInfo> UIndependentInputSubsystem::GetConnectedDevicesInfo(
 	TArray<FJoystickDeviceInfo> Infos;
 	ConnectedDevices.GenerateValueArray(Infos);
 	return Infos;
+}
+
+bool UIndependentInputSubsystem::IsGamepadDevice(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+		return DeviceMapping->bUseIndependentInputAPI && DeviceMapping->bUseGamepadAPI;
+
+	return false;
 }
 
 bool UIndependentInputSubsystem::FindDeviceInstanceIdForInputDevice(const FInputDeviceId InputDeviceId, FInputDeviceInstanceId& OutInstanceId) const
@@ -799,6 +808,56 @@ bool UIndependentInputSubsystem::GetDeviceTouchpadMapping(const FInputDeviceInst
 	return true;
 }
 
+bool UIndependentInputSubsystem::DoesDeviceHasLeftAndRightThumbsticks(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+	{
+		bool bHasLeftStickX = false;
+		bool bHasLeftStickY = false;
+		bool bHasRightStickX = false;
+		bool bHasRightStickY = false;
+
+		for (const TPair<int32, FJoystickAxisKeyMapping>& AxisMapping : DeviceMapping->AxisMappings)
+		{
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_LeftX)
+				bHasLeftStickX = true;
+
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_LeftY)
+				bHasLeftStickY = true;
+
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_RightX)
+				bHasRightStickX = true;
+
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_RightY)
+				bHasRightStickY = true;
+		}
+		return bHasLeftStickX && bHasLeftStickY && bHasRightStickX && bHasRightStickY;
+	}
+
+	return false;
+}
+
+bool UIndependentInputSubsystem::DoesDeviceHasLeftAndRightTriggerAxis(const FInputDeviceInstanceId& DeviceId) const
+{
+	if (const FJoystickDeviceKeyMapping* DeviceMapping = ConnectedDevicesMappings.Find(DeviceId))
+	{
+		bool bHasLefTrigger = false;
+		bool bHasRightTrigger = false;
+
+		for (const TPair<int32, FJoystickAxisKeyMapping>& AxisMapping : DeviceMapping->AxisMappings)
+		{
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_LeftTriggerAxis)
+				bHasLefTrigger = true;
+
+			if (AxisMapping.Value.Key.GetKey() == EKeys::Gamepad_RightTriggerAxis)
+				bHasRightTrigger = true;
+		}
+		return bHasLefTrigger && bHasRightTrigger;
+	}
+
+	return false;
+}
+
 TArray<EDeviceSensorType> UIndependentInputSubsystem::GetSupportedSensors(const FInputDeviceInstanceId& DeviceId)
 {
 	TArray<EDeviceSensorType> SupportedSensors;
@@ -1053,8 +1112,7 @@ void UIndependentInputSubsystem::PumpEvents()
 						Event.gtouchpad.finger,
 						true,
 						Event.gtouchpad.x,
-						Event.gtouchpad.y,
-						Event.gtouchpad.pressure);
+						Event.gtouchpad.y);
 				}
 				break;
 			}
@@ -1072,8 +1130,7 @@ void UIndependentInputSubsystem::PumpEvents()
 						Event.gtouchpad.finger,
 						false,
 						Event.gtouchpad.x,
-						Event.gtouchpad.y,
-						Event.gtouchpad.pressure);
+						Event.gtouchpad.y);
 				}
 				break;
 			}
@@ -1261,6 +1318,9 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 			int32 NumOfTouchpadFingers = SDL_GetNumGamepadTouchpadFingers(SDLDevice.Gamepad, i);
 			DeviceInfo.Touchpads.Add(FTouchpadInfo(i, NumOfTouchpadFingers));
 		}
+
+		if (const char* Mapping = SDL_GetGamepadMapping(SDLDevice.Gamepad))
+			DeviceInfo.KeyMapping = UTF8_TO_TCHAR(Mapping);
 	}
 	else
 	{
@@ -1333,7 +1393,22 @@ bool UIndependentInputSubsystem::RegisterDevice(SDL_JoystickID InstanceId)
 	UE_LOG(LogIndependentInput, Log, TEXT("\tBattery State: %s"), *UEnum::GetDisplayValueAsText(DeviceInfo.BatteryState).ToString());
 	UE_LOG(LogIndependentInput, Log, TEXT("\tDevice Path: %s"), *SDLDevice.DevicePath);
 
-	UIndependentInputManagerSettings::GetMutable()->DevicePluggedIn(DeviceInfo);
+	if (SDLDevice.bIsGamepad)
+		UE_LOG(LogIndependentInput, Log, TEXT("\tKey Mapping: %s"), *DeviceInfo.KeyMapping);
+
+	UIndependentInputManagerSettings* InputManagerSettings = UIndependentInputManagerSettings::GetMutable();
+	if (InputManagerSettings)
+	{
+		InputManagerSettings->DevicePluggedIn(DeviceInfo);
+		if (InputManagerSettings->GetForceDevicesForSingleUser())
+		{
+			if (SDLDevice.Gamepad)
+				SDL_SetGamepadPlayerIndex(SDLDevice.Gamepad, 0);
+			else
+				SDL_SetJoystickPlayerIndex(SDLDevice.Joystick, 0);
+		}
+	}
+	
 	OnDevicePluggedIn.Broadcast(DeviceInfo, SDLDevice);
 
 #if WITH_EDITORONLY_DATA
@@ -1638,7 +1713,6 @@ void UIndependentInputSubsystem::CreateKeyMappingIfMissing(FJoystickDeviceInfo& 
 					FingerMapping.Touch = FIndependentInputKey(Prefix + TEXT(" Touch"), DeviceInfo.MappingId.ToString(), false, true);
 					FingerMapping.PositionX = FIndependentInputKey(Prefix + TEXT(" X-Axis"), DeviceInfo.MappingId.ToString(), true, true);
 					FingerMapping.PositionY = FIndependentInputKey(Prefix + TEXT(" Y-Axis"), DeviceInfo.MappingId.ToString(), true, true);
-					FingerMapping.Pressure = FIndependentInputKey(Prefix + TEXT(" Pressure"), DeviceInfo.MappingId.ToString(), true, true);
 					TouchpadMapping.Fingers.Add(MoveTemp(FingerMapping));
 				}
 

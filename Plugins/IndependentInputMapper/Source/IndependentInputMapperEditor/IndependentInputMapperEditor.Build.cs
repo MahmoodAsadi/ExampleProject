@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class IndependentInputManagerEditor : ModuleRules
+public class IndependentInputMapperEditor : ModuleRules
 {
-    public IndependentInputManagerEditor(ReadOnlyTargetRules Target) : base(Target)
+    public IndependentInputMapperEditor(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -12,7 +12,7 @@ public class IndependentInputManagerEditor : ModuleRules
             new string[]
             {
                 "Core",
-                "IndependentInputManager"
+                "IndependentInputMapper"
             }
         );
 
@@ -27,9 +27,8 @@ public class IndependentInputManagerEditor : ModuleRules
                 "AssetTools",
                 "UnrealEd",
                 "PropertyEditor",
-                "Settings",
                 "ToolMenus",
-                "Projects"
+                "Settings"
             }
         );
     }

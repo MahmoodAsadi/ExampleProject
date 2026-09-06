@@ -58,6 +58,7 @@ public:
 	/** Returns the first connected device matching DeviceIdentifier, or nullptr if none matches. */
 	const FJoystickDeviceInfo* FindDeviceInfoByIdentifier(const FJoystickDeviceIdentifier& DeviceIdentifier) const;
 
+	/** Returns whether the device is connect with given device Id. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	bool IsDeviceConnected(FInputDeviceInstanceId DeviceId) const;
 
@@ -65,11 +66,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	bool IsDeviceOwnedByIndependentInputManager(FInputDeviceInstanceId DeviceId) const;
 
+	/** Returns number of connected devices, Some may not use the Independent input device interface. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	int32 GetConnectedDeviceCount() const { return ConnectedDevices.Num(); }
 	
+	/** Returns all connected devices info. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
 	TArray<FJoystickDeviceInfo> GetConnectedDevicesInfo() const;
+
+	/** Returns true if connected device with given DeviceId is a gamepad and uses independent input device interface. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
+	bool IsGamepadDevice(const FInputDeviceInstanceId& DeviceId) const;
 
 	/** Finds the connected SDL instance ID assigned to InputDeviceId. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")
@@ -261,7 +268,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
 	bool GetDeviceTouchpadMapping(const FInputDeviceInstanceId& DeviceId, int32 TouchpadIndex, FJoystickTouchpadKeyMapping& OutTouchpadMapping) const;
 
-	
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool DoesDeviceHasLeftAndRightThumbsticks(const FInputDeviceInstanceId& DeviceId) const;
+
+	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem|Key Mapping")
+	bool DoesDeviceHasLeftAndRightTriggerAxis(const FInputDeviceInstanceId& DeviceId) const;
 
 	/** Returns every sensor reported by the connected device. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Subsystem")

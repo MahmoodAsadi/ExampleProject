@@ -19,6 +19,11 @@
 			"Name": "IndependentInputMapper",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "IndependentInputMapperEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
 		}
 	]
 }

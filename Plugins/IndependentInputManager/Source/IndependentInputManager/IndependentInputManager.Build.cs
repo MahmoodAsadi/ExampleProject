@@ -32,14 +32,19 @@ public class IndependentInputManager : ModuleRules
                 "InputCore",
                 "InputDevice",
                 "ApplicationCore",
-                "DeveloperSettings"
+                "DeveloperSettings",
+                "EnhancedInput",
+                "UMG",
+                "GameplayTags"
             }
             );
 
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-                "Projects",
+                "Slate",
+                "SlateCore",
+                "Projects"
             }
             );
 

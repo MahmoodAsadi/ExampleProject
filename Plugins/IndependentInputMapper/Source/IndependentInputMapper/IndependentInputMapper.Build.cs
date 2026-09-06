@@ -26,6 +26,9 @@ public class IndependentInputMapper : ModuleRules
 			new string[]
 			{
 				"Core",
+                "EnhancedInput",
+                "InputCore",
+                "UMG"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,6 +41,7 @@ public class IndependentInputMapper : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "GameplayTags"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

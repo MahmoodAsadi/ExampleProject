@@ -4,6 +4,8 @@
 
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogIndependentInputMapper, Log, All);
+
 class FIndependentInputMapperModule : public IModuleInterface
 {
 public:
