@@ -7,76 +7,75 @@
 
 void FIndependentCaptureInputProcessor::Tick(const float DeltaTime, FSlateApplication& SlateApp, TSharedRef<ICursor> Cursor)
 {
-
+	
 }
 
 bool FIndependentCaptureInputProcessor::HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent)
 {
-	InKeyEvent.GetInputDeviceId();
-	return InputKeySelector != nullptr;
+	return IInputProcessor::HandleKeyDownEvent(SlateApp, InKeyEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleKeyUpEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent)
 {
 	if (InputKeySelector)
-		return InputKeySelector->ProcessKeyUp(InKeyEvent);
-	
-	return false;
+		InputKeySelector->ProcessKeyUp(InKeyEvent);
+
+	return IInputProcessor::HandleKeyUpEvent(SlateApp, InKeyEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleAnalogInputEvent(FSlateApplication& SlateApp, const FAnalogInputEvent& InAnalogInputEvent)
 {
 	if (InputKeySelector)
-		return InputKeySelector->ProcessAnalogInput(InAnalogInputEvent);
+		InputKeySelector->ProcessAnalogInput(InAnalogInputEvent);
 
-	return false;
+	return IInputProcessor::HandleAnalogInputEvent(SlateApp, InAnalogInputEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleMouseMoveEvent(FSlateApplication& SlateApp, const FPointerEvent& InPointerEvent)
 {
 	if (InputKeySelector)
-		return InputKeySelector->ProcessMouseMove(InPointerEvent);
+		InputKeySelector->ProcessMouseMove(InPointerEvent);
 
-	return false;
+	return IInputProcessor::HandleMouseMoveEvent(SlateApp, InPointerEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleMouseButtonDownEvent(FSlateApplication& SlateApp, const FPointerEvent& MouseEvent)
 {
-	return InputKeySelector != nullptr;
+	return IInputProcessor::HandleMouseButtonDownEvent(SlateApp, MouseEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleMouseButtonUpEvent(FSlateApplication& SlateApp, const FPointerEvent& MouseEvent)
 {
 	if (InputKeySelector)
-		return InputKeySelector->ProcessKeyUp(
+		InputKeySelector->ProcessKeyUp(
 			FKeyEvent(
-				MouseEvent.GetEffectingButton(), 
-				MouseEvent.GetModifierKeys(), 
-				MouseEvent.GetInputDeviceId(), 
-				MouseEvent.IsRepeat(), 
-				0, 
+				MouseEvent.GetEffectingButton(),
+				MouseEvent.GetModifierKeys(),
+				MouseEvent.GetInputDeviceId(),
+				MouseEvent.IsRepeat(),
+				0,
 				0));
 
-	return false;
+	return IInputProcessor::HandleMouseButtonUpEvent(SlateApp, MouseEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleMouseButtonDoubleClickEvent(FSlateApplication& SlateApp, const FPointerEvent& InPointerEvent)
 {
-	return HandleMouseButtonDownEvent(SlateApp, InPointerEvent);
+	return IInputProcessor::HandleMouseButtonDoubleClickEvent(SlateApp, InPointerEvent);
 }
 
 bool FIndependentCaptureInputProcessor::HandleMouseWheelOrGestureEvent(FSlateApplication& SlateApp, const FPointerEvent& InWheelEvent, const FPointerEvent* InGestureEvent)
 {
 	// Ignore Gesture events.
 	if (InGestureEvent != nullptr)
-		return false;
+		return IInputProcessor::HandleMouseWheelOrGestureEvent(SlateApp, InWheelEvent, InGestureEvent);
 
 	if (InputKeySelector)
 	{
 		// Create Wheel Key manually since "InWheelEvent.GetEffectingButton()" is none.
 		const FKey MouseWheelKey = InWheelEvent.GetWheelDelta() < 0 ? EKeys::MouseScrollDown : EKeys::MouseScrollUp;
-		
-		return InputKeySelector->ProcessKeyUp(
+
+		InputKeySelector->ProcessKeyUp(
 			FKeyEvent(
 				MouseWheelKey,
 				InWheelEvent.GetModifierKeys(),
@@ -86,5 +85,5 @@ bool FIndependentCaptureInputProcessor::HandleMouseWheelOrGestureEvent(FSlateApp
 				0));
 	}
 
-	return false;
+	return IInputProcessor::HandleMouseWheelOrGestureEvent(SlateApp, InWheelEvent, InGestureEvent);
 }
