@@ -46,6 +46,7 @@ public:
 		if (UserSettings->Mappings.Contains(IndependentInputMappingContext))
 			BindingSet = UserSettings->Mappings[IndependentInputMappingContext];
 
+		TArray<FEnhancedActionKeyMapping> Mappings;
 		for (const TPair<FName, FIndependentInputMappingDefinition>& MappingPair : IndependentInputMappingContext->GetMappings())
 		{
 			const FIndependentInputMappingDefinition& Mapping = MappingPair.Value;
@@ -64,7 +65,7 @@ public:
 			FEnhancedActionKeyMapping PrimaryMapping(Mapping.InputAction.IsNull() ? nullptr : Mapping.InputAction.LoadSynchronous(), PrimaryKey);
 			PrimaryMapping.Triggers = Mapping.PrimaryMapping.Triggers;
 			PrimaryMapping.Modifiers = Mapping.PrimaryMapping.Modifiers;
-			NewInputMappingContext->Mappings.Add(PrimaryMapping);
+			Mappings.Add(PrimaryMapping);
 
 			// Add the secondary mapping if it is supported.
 			if (Mapping.bSupportsSecondarySlot)
@@ -72,10 +73,18 @@ public:
 				FEnhancedActionKeyMapping SecondaryMapping(Mapping.InputAction.IsNull() ? nullptr : Mapping.InputAction.LoadSynchronous(), SecondaryKey);
 				SecondaryMapping.Triggers = Mapping.SecondaryMapping.Triggers;
 				SecondaryMapping.Modifiers = Mapping.SecondaryMapping.Modifiers;
-				NewInputMappingContext->Mappings.Add(SecondaryMapping);
+				Mappings.Add(SecondaryMapping);
 			}
 		}
 		
+#if ENGINE_MAJOR_VERSION > 5 || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 6)
+		FInputMappingContextMappingData DefaultKeyMappings;
+		DefaultKeyMappings.Mappings = Mappings;
+		NewInputMappingContext->DefaultKeyMappings = DefaultKeyMappings;
+#else
+		NewInputMappingContext->Mappings = Mappings;
+#endif
+
 		return NewInputMappingContext;
 	}
 };
