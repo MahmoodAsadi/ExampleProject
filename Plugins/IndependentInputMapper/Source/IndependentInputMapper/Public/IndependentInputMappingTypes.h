@@ -11,6 +11,7 @@
 
 class UIndependentInputMappingContext;
 class UInputAction;
+class UInputKeyVisualCollection;
 class UInputModifier;
 class UInputMappingContext;
 class UInputTrigger;
@@ -277,6 +278,7 @@ public:
 	TMap<FName, FIndependentInputBindingOverride> Bindings;
 };
 
+
 USTRUCT(BlueprintType)
 struct INDEPENDENTINPUTMAPPER_API FIndependentInputMappingContextsInfo
 {
@@ -303,5 +305,43 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BindingSet)
 	FModifyContextOptions ModifyOptions;
+
+};
+
+
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMAPPER_API FInputKeyVisualInfo
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Info")
+	TSoftObjectPtr<UTexture2D> ActionImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Info")
+	FText ActionKeyDisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Info")
+	bool bShowBorder = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Info", meta = (InlineEditConditionToggle))
+	bool bOverrideBorderBrush = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Info", meta = (EditCondition = "bOverrideBorderBrush"))
+	FSlateBrush OverrideBorderBrush;
+
+};
+
+
+USTRUCT(BlueprintType)
+struct INDEPENDENTINPUTMAPPER_API FInputDeviceVisualCollection
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input Visual Collection")
+	TMap<FName, TSoftObjectPtr<UInputKeyVisualCollection>> HardwareDevicesVisualCollection;
 
 };

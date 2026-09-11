@@ -31,7 +31,7 @@ public:
 	TMap<UIndependentInputMappingContext*, FIndependentInputBindingSet> Mappings;
 
 	UFUNCTION(BlueprintCallable, Category = "Independent Input|Independent Input User Settings")
-	bool FindMappingOverrideForMappingId(UIndependentInputMappingContext* InputMappingContext, FName MappingId, FIndependentInputBindingOverride& OutBindingOverride) const;
+	bool FindMappingOverrideForMappingId(const UIndependentInputMappingContext* InputMappingContext, FName MappingId, FIndependentInputBindingOverride& OutBindingOverride) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Independent Input|Independent Input User Settings")
 	void UpdatePlayerMapping(UIndependentInputMappingContext* InputMappingContext, FName MappingId, EIndependentInputBindingSlot Slot, FKey NewKey);

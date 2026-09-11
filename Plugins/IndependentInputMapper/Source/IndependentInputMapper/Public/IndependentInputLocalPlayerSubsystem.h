@@ -72,6 +72,36 @@ public:
 	UFUNCTION(BlueprintPure, Category = IndependentInputLocalPlayerSubsystem)
 	UInputMappingContext* FindInputMappingContextForIndependentInputMapping(const UIndependentInputMappingContext* InMappingContext) const;
 
+	/**
+	 * Gets all registered independent input mapping contexts.
+	 *
+	 * @return An array of registered independent input mapping contexts.
+	 */
+	UFUNCTION(BlueprintPure, Category = IndependentInputLocalPlayerSubsystem)
+	TArray<UIndependentInputMappingContext*> GetRegisteredIndependentInputMappingContexts() const;
+
+	/**
+	 * Finds the mapping definition for the specified mapping ID.
+	 *
+	 * @param MappingId				The mapping ID to find the definition for.
+	 * @param OutMappingDefinition	The output mapping definition associated with the mapping ID.
+	 * 
+	 * @return true if a mapping definition was found, false otherwise.
+	 */
+	UFUNCTION(BlueprintPure, Category = IndependentInputLocalPlayerSubsystem)
+	bool FindMappingDefinitionForMappingId(FName MappingId, FIndependentInputMappingDefinition& OutMappingDefinition) const;
+
+	/**
+	 * Finds the binding set for the specified mapping ID.
+	 *
+	 * @param MappingId			The mapping ID to find the binding set for.
+	 * @param OutBindingSet		The output binding set associated with the mapping ID.
+	 * 
+	 * @return true if a binding set was found, false otherwise.
+	 */
+	UFUNCTION(BlueprintPure, Category = IndependentInputLocalPlayerSubsystem)
+	bool FindBindingSetForMappingId(FName MappingId, FIndependentInputBindingOverride& OutBindingSet) const;
+	
 protected:
 
 	/**

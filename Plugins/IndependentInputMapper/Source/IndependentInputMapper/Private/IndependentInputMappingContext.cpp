@@ -17,6 +17,19 @@ bool UIndependentInputMappingContext::FindDefaultBindingSetByMappingId(FName Map
     return true;
 }
 
+bool UIndependentInputMappingContext::FindInputMappingDefinitionByMappingId(FName MappingId, FIndependentInputMappingDefinition& OutMappingDefinition) const
+{
+    OutMappingDefinition = FIndependentInputMappingDefinition();
+	const FIndependentInputMappingDefinition* FoundDefinition = Mappings.Find(MappingId);
+	if (FoundDefinition)
+	{
+		OutMappingDefinition = *FoundDefinition;
+		return true;
+	}
+
+    return false;
+}
+
 #if WITH_EDITOR
 void UIndependentInputMappingContext::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {

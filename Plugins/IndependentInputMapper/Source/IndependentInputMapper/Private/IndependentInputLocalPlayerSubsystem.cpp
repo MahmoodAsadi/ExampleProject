@@ -191,6 +191,60 @@ UInputMappingContext* UIndependentInputLocalPlayerSubsystem::FindInputMappingCon
 	return MappingContextInfo->MappingContext;
 }
 
+TArray<UIndependentInputMappingContext*> UIndependentInputLocalPlayerSubsystem::GetRegisteredIndependentInputMappingContexts() const
+{
+	TArray<UIndependentInputMappingContext*> Result;
+	Result.Reserve(RegisteredMappingContexts.Num());
+
+	for (const TPair<TObjectPtr<const UIndependentInputMappingContext>, FIndependentInputMappingContextsInfo>& Pair : RegisteredMappingContexts)
+	{
+		if (Pair.Key)
+		{
+			Result.Add(const_cast<UIndependentInputMappingContext*>(Pair.Key.Get()));
+		}
+	}
+
+	return Result;
+}
+
+bool UIndependentInputLocalPlayerSubsystem::FindMappingDefinitionForMappingId(FName MappingId, FIndependentInputMappingDefinition& OutMappingDefinition) const
+{
+	OutMappingDefinition = FIndependentInputMappingDefinition();
+
+	for (const TPair<TObjectPtr<const UIndependentInputMappingContext>, FIndependentInputMappingContextsInfo>& Pair : RegisteredMappingContexts)
+	{
+		if (Pair.Key)
+		{
+			if (Pair.Key->FindInputMappingDefinitionByMappingId(MappingId, OutMappingDefinition))
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool UIndependentInputLocalPlayerSubsystem::FindBindingSetForMappingId(FName MappingId, FIndependentInputBindingOverride& OutBindingSet) const
+{
+	OutBindingSet = FIndependentInputBindingOverride();
+	UIndependentInputUserSettings* UserSettings = nullptr;
+	if (GetEnhancedInputSubsystem())
+		UserSettings = GetEnhancedInputSubsystem()->GetUserSettings<UIndependentInputUserSettings>();
+
+	if (!IsValid(UserSettings))
+		return false;
+
+	for (const TPair<TObjectPtr<const UIndependentInputMappingContext>, FIndependentInputMappingContextsInfo>& Pair : RegisteredMappingContexts)
+	{
+		if (Pair.Key)
+		{
+			if (UserSettings->FindMappingOverrideForMappingId(Pair.Key.Get(), MappingId, OutBindingSet))
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void UIndependentInputLocalPlayerSubsystem::ApplyMappingContextMapping(const UIndependentInputMappingContext* InMappingContext)
 {
 	if (!IsValid(InMappingContext))

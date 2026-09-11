@@ -19,11 +19,31 @@ class INDEPENDENTINPUTMAPPER_API UIndependentInputMappingContext : public UDataA
 	
 public:
 
+	/** Returns the input mapping definitions for this context. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Mapping Context")
 	const TMap<FName, FIndependentInputMappingDefinition>& GetMappings() const { return Mappings; }
 
+	/**
+	* Finds the default binding set for a given mapping ID. 
+	* 
+	* @param MappingId The ID of the mapping to find the default binding set for.
+	* @param OutBindingSet The output parameter that will hold the default binding set if found.
+	* 
+	* @return true if the default binding set was found, false otherwise.
+	*/
 	UFUNCTION(BlueprintPure, Category = "Independent Input Mapping Context")
 	bool FindDefaultBindingSetByMappingId(FName MappingId, FIndependentInputBindingOverride& OutBindingSet) const;
+
+	/**
+	* Finds the input mapping definition for a given mapping ID.
+	* 
+	* @param MappingId The ID of the mapping to find the definition for.
+	* @param OutMappingDefinition The output parameter that will hold the input mapping definition if found.
+	* 
+	* @return true if the input mapping definition was found, false otherwise.
+	*/
+	UFUNCTION(BlueprintPure, Category = "Independent Input Mapping Context")
+	bool FindInputMappingDefinitionByMappingId(FName MappingId, FIndependentInputMappingDefinition& OutMappingDefinition) const;
 
 	// Localized context descriptor
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Description, DisplayName = "Description")

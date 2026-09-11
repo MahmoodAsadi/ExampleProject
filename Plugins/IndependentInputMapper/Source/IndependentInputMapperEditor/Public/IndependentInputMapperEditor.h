@@ -4,9 +4,7 @@
 #include "Modules/ModuleManager.h"
 
 class FSlateStyleSet;
-class FSpawnTabArgs;
 class IAssetTypeActions;
-class SDockTab;
 
 class FIndependentInputMapperEditorModule : public IModuleInterface
 {

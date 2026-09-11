@@ -45,7 +45,7 @@ UIndependentInputUserSettings* UIndependentInputUserSettings::GetOrCreateForLoca
 	return Settings;
 }
 
-bool UIndependentInputUserSettings::FindMappingOverrideForMappingId(UIndependentInputMappingContext* InputMappingContext, FName MappingId, FIndependentInputBindingOverride& OutBindingOverride) const
+bool UIndependentInputUserSettings::FindMappingOverrideForMappingId(const UIndependentInputMappingContext* InputMappingContext, FName MappingId, FIndependentInputBindingOverride& OutBindingOverride) const
 {
 	OutBindingOverride = FIndependentInputBindingOverride();
 	if (!IsValid(InputMappingContext))
@@ -54,6 +54,7 @@ bool UIndependentInputUserSettings::FindMappingOverrideForMappingId(UIndependent
 	if (MappingId.IsNone() || !MappingId.IsValid() || MappingId.ToString().IsEmpty())
 		return false;
 
+	// Check if there is a mapping override for the given InputMappingContext and MappingId.
 	if (const FIndependentInputBindingSet* FoundBindingSet = Mappings.Find(InputMappingContext))
 	{
 		if (const FIndependentInputBindingOverride* FoundBindingOverride = FoundBindingSet->Bindings.Find(MappingId))
@@ -63,6 +64,7 @@ bool UIndependentInputUserSettings::FindMappingOverrideForMappingId(UIndependent
 		}
 	}
 
+	// If no override is found, check the default mapping definitions in the InputMappingContext.
 	const FIndependentInputMappingDefinition* FoundDefinition = InputMappingContext->GetMappings().Find(MappingId);
 	if (FoundDefinition)
 	{
@@ -174,6 +176,7 @@ void UIndependentInputUserSettings::ResetInputMappingToDefault(UIndependentInput
 		IndependentInputSubsystem->ApplyMappingContextMapping(InputMappingContext);
 	
 	OnSettingsChanged.Broadcast(this);
+	OnSettingsApplied.Broadcast();
 }
 
 void UIndependentInputUserSettings::ResetAllMappingsToDefault()
@@ -192,6 +195,7 @@ void UIndependentInputUserSettings::ResetAllMappingsToDefault()
 	}
 	
 	OnSettingsChanged.Broadcast(this);
+	OnSettingsApplied.Broadcast();
 }
 
 void UIndependentInputUserSettings::DiscardPendingChanges()

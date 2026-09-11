@@ -10,7 +10,7 @@
 #include "Styling/SlateStyleRegistry.h"
 #include "ToolMenus.h"
 
-#include "IndependentInputMappingContext_AssetAction.h"
+#include "IndependentInputMapping_AssetActions.h"
 
 #define LOCTEXT_NAMESPACE "FIndependentInputMapperEditorModule"
 
@@ -42,6 +42,7 @@ void FIndependentInputMapperEditorModule::StartupModule()
 
 	// Create Asset type actions.
 	RegisteredAssetTypeActions.Emplace(MakeShareable(new FAssetTypeActions_IndependentInputMappingContext()));
+	RegisteredAssetTypeActions.Emplace(MakeShareable(new FAssetTypeActions_InputKeyVisualCollection()));
 
 	// Register Asset type actions.
 	for (auto Action : RegisteredAssetTypeActions)
