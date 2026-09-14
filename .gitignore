@@ -59,6 +59,9 @@ Packages/
 /.agents/
 /AGENTS.md
 
+# Memory analysis and working notes (keep manually)
+/memory/
+
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
 Build/*/**
