@@ -73,8 +73,9 @@ void FIndependentInputDevice::SetChannelValue(int ControllerId, FForceFeedbackCh
 	IPlatformInputDeviceMapper& DeviceMapper = IPlatformInputDeviceMapper::Get();
 	FPlatformUserId UserId = PLATFORMUSERID_NONE;
 	FInputDeviceId DeviceId = INPUTDEVICEID_NONE;
-	DeviceMapper.RemapControllerIdToPlatformUserAndDevice(ControllerId, UserId, DeviceId);
-	if (!UserId.IsValid())
+	const bool bRemappedSuccess = DeviceMapper.RemapControllerIdToPlatformUserAndDevice(ControllerId, UserId, DeviceId);
+
+	if (!bRemappedSuccess || !UserId.IsValid())
 		return;
 
 	Value = FMath::Clamp(Value, 0.0f, 1.0f);
@@ -112,8 +113,8 @@ void FIndependentInputDevice::SetChannelValues(int ControllerId, const FForceFee
 	IPlatformInputDeviceMapper& DeviceMapper = IPlatformInputDeviceMapper::Get();
 	FPlatformUserId UserId = PLATFORMUSERID_NONE;
 	FInputDeviceId DeviceId = INPUTDEVICEID_NONE;
-	DeviceMapper.RemapControllerIdToPlatformUserAndDevice(ControllerId, UserId, DeviceId);
-	if (!UserId.IsValid())
+	const bool bRemappedSuccess = DeviceMapper.RemapControllerIdToPlatformUserAndDevice(ControllerId, UserId, DeviceId);
+	if (!bRemappedSuccess || !UserId.IsValid())
 		return;
 
 	for (TPair<FInputDeviceInstanceId, FJoystickDeviceState>& DeviceStatePair : DeviceStates)
@@ -157,6 +158,8 @@ void FIndependentInputDevice::DevicePluggedIn(FJoystickDeviceInfo& DeviceInfo, c
 
 		if (bWasSuccess)
 			NewState.DualSense->SetTriggerEffectsEnable();
+		else
+			NewState.DualSense.Reset();
 	}
 #endif
 
@@ -296,7 +299,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerResistance(const FInputDeviceIns
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -315,7 +318,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerWeapon(const FInputDeviceInstanc
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -334,7 +337,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerVibration(const FInputDeviceInst
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -353,7 +356,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerBow(const FInputDeviceInstanceId
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -372,7 +375,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerGalloping(const FInputDeviceInst
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -391,7 +394,7 @@ bool FIndependentInputDevice::SetAdaptiveTriggerMachine(const FInputDeviceInstan
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	if (!DeviceState->AdaptiveTriggerEffect.IsEnabled())
@@ -410,7 +413,7 @@ bool FIndependentInputDevice::ClearAdaptiveTriggerEffect(const FInputDeviceInsta
 	if (!DeviceState)
 		return false;
 
-	if (!DeviceState->DualSense)
+	if (!DeviceState->DualSense.IsValid())
 		return false;
 
 	return DeviceState->DualSense->ClearAdaptiveTriggerEffect(Trigger);
@@ -515,6 +518,7 @@ FSensorState FIndependentInputDevice::GetSensorState(const FInputDeviceInstanceI
 
 void FIndependentInputDevice::SetAccelerometerSensorEnable(bool bEnable)
 {
+	// Enable or disable the accelerometer sensor for all devices that support it.
 	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& DeviceInfo : DeviceInfos)
 	{
 		const FJoystickDeviceKeyMapping* DeviceMapping = DeviceMappings.Find(DeviceInfo.Key);
@@ -525,6 +529,7 @@ void FIndependentInputDevice::SetAccelerometerSensorEnable(bool bEnable)
 		if (!SDLDevice || !SDLDevice->Gamepad)
 			continue;
 
+		// Enable or disable the accelerometer sensor based on the supported sensors type.
 		for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping->SensorMappings)
 		{
 			switch (SensorMapping.Key)
@@ -560,6 +565,7 @@ void FIndependentInputDevice::SetAccelerometerSensorEnable(bool bEnable)
 
 void FIndependentInputDevice::SetGyroscopeSensorEnable(bool bEnable)
 {
+	// Enable or disable the gyroscope sensor for all devices that support it.
 	for (const TPair<FInputDeviceInstanceId, FJoystickDeviceInfo>& DeviceInfo : DeviceInfos)
 	{
 		const FJoystickDeviceKeyMapping* DeviceMapping = DeviceMappings.Find(DeviceInfo.Key);
@@ -570,6 +576,7 @@ void FIndependentInputDevice::SetGyroscopeSensorEnable(bool bEnable)
 		if (!SDLDevice || !SDLDevice->Gamepad)
 			continue;
 
+		// Enable or disable the gyroscope sensor based on the supported sensors type.
 		for (const TPair<EDeviceSensorType, FJoystickSensorKeyMapping>& SensorMapping : DeviceMapping->SensorMappings)
 		{
 			switch (SensorMapping.Key)
@@ -805,7 +812,7 @@ void FIndependentInputDevice::UpdateVirtualButtons(FAxisState* AxisState)
 {
 	for (FAxisVirtualButtonState& VirtualButton : AxisState->VirtualButtons)
 	{
-		const bool bPressed = VirtualButton.EvalutateIsPressed(AxisState->Value);
+		const bool bPressed = VirtualButton.EvaluateIsPressed(AxisState->Value);
 		VirtualButton.ButtonState.Update(bPressed);
 	}
 }
@@ -979,20 +986,18 @@ void FIndependentInputDevice::HandleForceFeedback(FForceFeedbackState& ForceFeed
 		return;
 	}
 
-	FSDLJoystickDevice SDLDevice;
+	FSDLJoystickDevice* SDLDevice = SDLDevices.Find(DeviceId);
 
-	if (!SDLDevices.Contains(DeviceId))
+	if (!SDLDevice)
 		return;
-
-	SDLDevice = SDLDevices[DeviceId];
 
 	const Uint16 LowMotor = static_cast<Uint16>(Low * 65535.0f);
 	const Uint16 HighMotor = static_cast<Uint16>(High * 65535.0f);
 
-	if (SDLDevice.bIsGamepad)
-		SDL_RumbleGamepad(SDLDevice.Gamepad, LowMotor, HighMotor, 100);
-	else if (SDLDevice.Joystick)
-		SDL_RumbleJoystick(SDLDevice.Joystick, LowMotor, HighMotor, 100);
+	if (SDLDevice->bIsGamepad)
+		SDL_RumbleGamepad(SDLDevice->Gamepad, LowMotor, HighMotor, 100);
+	else if (SDLDevice->Joystick)
+		SDL_RumbleJoystick(SDLDevice->Joystick, LowMotor, HighMotor, 100);
 
 	ForceFeedbackState.LastLowFrequency = Low;
 	ForceFeedbackState.LastHighFrequency = High;

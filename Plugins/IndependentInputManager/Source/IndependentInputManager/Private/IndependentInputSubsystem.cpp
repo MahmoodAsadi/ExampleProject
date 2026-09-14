@@ -988,7 +988,7 @@ void UIndependentInputSubsystem::InitSDL()
 
 void UIndependentInputSubsystem::PumpEvents()
 {
-	if (!IndependentInputDevice)
+	if (!IndependentInputDevice.IsValid())
 		return;
 
 	SDL_PumpEvents();

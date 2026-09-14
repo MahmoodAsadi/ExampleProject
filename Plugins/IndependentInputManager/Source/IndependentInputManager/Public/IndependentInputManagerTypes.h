@@ -1090,7 +1090,7 @@ public:
 	EAxisThresholdCondition Condition = EAxisThresholdCondition::GreaterThan;
 	float Threshold = 0.5f;
 
-	bool EvalutateIsPressed(float InValue) const
+	bool EvaluateIsPressed(float InValue) const
 	{
 		switch (Condition)
 		{
