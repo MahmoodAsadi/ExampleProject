@@ -74,6 +74,8 @@ public:
 		SLATE_ARGUMENT(bool, IsFocusable)
 	SLATE_END_ARGS()
 
+	virtual ~SIndependentInputKeySelector() override;
+
 	void Construct(const FArguments& InArgs);
 
 public:
@@ -88,7 +90,7 @@ public:
 	void SetMargin(TAttribute<FMargin> InMargin);
 
 	/** Sets the style of the button which is used enter key selection mode. */
-	void SetButtonStyle(const FButtonStyle* ButtonStyle);
+	void SetButtonStyle(const FButtonStyle* InButtonStyle);
 
 	/** Sets the style of the text on the button which is used enter key selection mode. */
 	void SetTextStyle(const FTextBlockStyle* InTextStyle);
@@ -114,6 +116,9 @@ public:
 	/** Returns current input key capture info. */
 	const FIndependentInputCaptureInfo& GetInputKeyCaptureInfo() const { return InputKeyCaptureInfo; }
 
+	/** Sets whether Escape and configured cancel keys cancel key selection. */
+	void SetEscapeCancelsSelection(bool bInEscapeCancelsSelection) { bEscapeCancelsSelection = bInEscapeCancelsSelection; }
+
 
 	virtual void OnFocusLost(const FFocusEvent& InFocusEvent) override;
 	virtual bool SupportsKeyboardFocus() const override { return true; }
@@ -132,9 +137,13 @@ private:
 	/** Sets bIsSelectingKey and invokes the associated events. */
 	void SetIsSelectingKey(bool bInIsSelectingKey);
 
-
+	// Handles the key down event when key selection mode is active. Returns true if the event was handled, otherwise returns false.
 	bool ProcessKeyUp(const FKeyEvent& InKeyEvent);
+
+	// Handles the analog input event when key selection mode is active. Returns true if the event was handled, otherwise returns false.
 	bool ProcessAnalogInput(const FAnalogInputEvent& InAnalogInputEvent);
+
+	// Handles the mouse button down event when key selection mode is active. Returns true if the event was handled, otherwise returns false.
 	bool ProcessMouseMove(const FPointerEvent& InPointerEvent);
 
 	void CompletedCapture(const FKeyEvent& InKeyEvent);
@@ -160,11 +169,16 @@ private:
 	/**  The text to display while no key text is available or not selecting a key. */
 	FText NoKeySpecifiedText;
 
+	FButtonStyle ButtonStyle;
+
+	FTextBlockStyle TextStyle;
+
 	/** The information about the key capture. */
 	FIndependentInputCaptureInfo InputKeyCaptureInfo;
 
 	/** When true, pressing escape will cancel the key selection, when false, pressing escape will select the escape key. */
 	bool bEscapeCancelsSelection;
+
 	/** The button which starts the key selection mode. */
 	TSharedPtr<SButton> Button;
 

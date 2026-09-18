@@ -12,20 +12,20 @@
 
 UIndependentInputUserSettings* UIndependentInputUserSettings::GetOrCreateForLocalPlayer(ULocalPlayer* LocalPlayer)
 {
-	if (!LocalPlayer)
+	if (!IsValid(LocalPlayer))
 	{
-		//UE_LOG(LogIndependentInputMapper, Warning, TEXT("Cannot load input bindings without a local player."));
+		UE_LOG(LogIndependentInputMapper, Warning, TEXT("Cannot load input bindings without a local player."));
 		return nullptr;
 	}
 
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-	if (!EnhancedInputSubsystem)
+	if (!IsValid(EnhancedInputSubsystem))
 	{
-		/*UE_LOG(
+		UE_LOG(
 			LogIndependentInputMapper,
 			Warning,
 			TEXT("Cannot load input bindings because the Enhanced Input subsystem is unavailable for local player %d."),
-			LocalPlayer->GetLocalPlayerIndex());*/
+			LocalPlayer->GetLocalPlayerIndex());
 		return nullptr;
 	}
 
@@ -33,13 +33,13 @@ UIndependentInputUserSettings* UIndependentInputUserSettings::GetOrCreateForLoca
 		EnhancedInputSubsystem->InitalizeUserSettings();
 
 	UIndependentInputUserSettings* Settings = EnhancedInputSubsystem->GetUserSettings<UIndependentInputUserSettings>();
-	if (!Settings)
+	if (!IsValid(Settings))
 	{
-		/*UE_LOG(
+		UE_LOG(
 			LogIndependentInputMapper,
 			Warning,
 			TEXT("Enhanced Input user settings for local player %d do not use UIndependentInputUserSettings."),
-			LocalPlayer->GetLocalPlayerIndex());*/
+			LocalPlayer->GetLocalPlayerIndex());
 	}
 
 	return Settings;
@@ -86,22 +86,46 @@ void UIndependentInputUserSettings::UpdatePlayerMapping(UIndependentInputMapping
 	if (MappingId.IsNone() || !MappingId.IsValid())
 		return;
 
+	// Check if the mapping definition exists and can be modified.
+	FIndependentInputMappingDefinition FoundDefinition;
+	if (!InputMappingContext->FindInputMappingDefinitionByMappingId(MappingId, FoundDefinition))
+		return;
+
+	if (!FoundDefinition.bCanBeModified)
+		return;
+
+	if (Slot != EIndependentInputBindingSlot::Primary && Slot != EIndependentInputBindingSlot::Secondary)
+		return;
+
+	if (!FoundDefinition.bSupportsSecondarySlot && Slot == EIndependentInputBindingSlot::Secondary)
+		return;
+
+	if (!FoundDefinition.InputCaptureInfo.IsKeyCompatibleForCapture(NewKey))
+		return;
+
 	FIndependentInputBindingOverride BindingOverride;
 	if (!FindMappingOverrideForMappingId(InputMappingContext, MappingId, BindingOverride))
 		return;
 
+	// Start with the current mapping only when this is the first pending edit for it.
+	// Subsequent slot edits must retain the other pending slot value.
+	FIndependentInputBindingSet& BindingSet = PendingMappings.FindOrAdd(InputMappingContext);
+	FIndependentInputBindingOverride* PendingBindingOverride = BindingSet.Bindings.Find(MappingId);
+	if (!PendingBindingOverride)
+	{
+		PendingBindingOverride = &BindingSet.Bindings.Add(MappingId, BindingOverride);
+	}
+
 	switch (Slot)
 	{
 	case EIndependentInputBindingSlot::Primary:
-		BindingOverride.PrimaryKey = NewKey;
+		PendingBindingOverride->PrimaryKey = NewKey;
 		break;
 	case EIndependentInputBindingSlot::Secondary:
-		BindingOverride.SecondaryKey = NewKey;
+		PendingBindingOverride->SecondaryKey = NewKey;
 		break;
 	}
 
-	FIndependentInputBindingSet& BindingSet = PendingMappings.FindOrAdd(InputMappingContext);
-	BindingSet.Bindings.FindOrAdd(MappingId) = BindingOverride;
 	OnSettingsChanged.Broadcast(this);
 }
 
@@ -109,38 +133,48 @@ bool UIndependentInputUserSettings::IsSettingsDirty() const
 {
 	for (const TPair<UIndependentInputMappingContext*, FIndependentInputBindingSet>& PendingMappingPair : PendingMappings)
 	{
+		// Check if the pending mapping differs from the current mapping in Mappings.
 		const FIndependentInputBindingSet* PreviousBindingSet = Mappings.Find(PendingMappingPair.Key);
 		for (TPair<FName, FIndependentInputBindingOverride> BindingOverridePair : PendingMappingPair.Value.Bindings)
 		{
 			if (PreviousBindingSet)
 			{
+				// Check if the binding override differs from the previous binding set.
 				const FIndependentInputBindingOverride* PreviousBinding = PreviousBindingSet->Bindings.Find(BindingOverridePair.Key);
 				if (PreviousBinding)
 				{
+					// Check if the binding override differs from the previous binding.
 					if (*PreviousBinding != BindingOverridePair.Value)
 						return true;
 				}
 				else
 				{
+					// If there was no previous binding, then the pending mapping is dirty.
 					return true;
 				}
 			}
 			else
 			{
+				// If there was no previous binding set but there is a pending mapping, Need to check if the pending mapping differs from the default mapping in the InputMappingContext.
 				FIndependentInputBindingOverride DefaultBinding;
-				if (PendingMappingPair.Key->FindDefaultBindingSetByMappingId(BindingOverridePair.Key, DefaultBinding))
-					return BindingOverridePair.Value != DefaultBinding;
-				
-				return true;
+				if (!PendingMappingPair.Key->FindDefaultBindingSetByMappingId(BindingOverridePair.Key, DefaultBinding))
+					return true;
+
+				if (BindingOverridePair.Value != DefaultBinding)
+					return true;
 			}
 		}
 	}
 
+	// If there are no pending mappings, then the settings are not dirty.
 	return false;
 }
 
 bool UIndependentInputUserSettings::IsUsingDefaultMapping(UIndependentInputMappingContext* InputMappingContext) const
 {
+	if (!IsValid(InputMappingContext))
+		return false;
+
 	if (Mappings.IsEmpty())
 		return true;
 
@@ -169,12 +203,21 @@ bool UIndependentInputUserSettings::IsUsingDefaultMapping(UIndependentInputMappi
 
 void UIndependentInputUserSettings::ResetInputMappingToDefault(UIndependentInputMappingContext* InputMappingContext)
 {
+	if (!IsValid(InputMappingContext))
+		return;
+
+	UIndependentInputLocalPlayerSubsystem* IndependentInputSubsystem = UIndependentInputLocalPlayerSubsystem::Get(GetLocalPlayer());
+	if (!IsValid(IndependentInputSubsystem))
+		return;
+
+	const bool bWasActive = IndependentInputSubsystem->HasInputMappingContext(InputMappingContext);
 	Mappings.Remove(InputMappingContext);
 	PendingMappings.Remove(InputMappingContext);
 
-	if (UIndependentInputLocalPlayerSubsystem* IndependentInputSubsystem = UIndependentInputLocalPlayerSubsystem::Get(GetLocalPlayer()))
+	// Reset stored overrides for inactive contexts without activating them.
+	if (bWasActive)
 		IndependentInputSubsystem->ApplyMappingContextMapping(InputMappingContext);
-	
+
 	OnSettingsChanged.Broadcast(this);
 	OnSettingsApplied.Broadcast();
 }
@@ -190,10 +233,11 @@ void UIndependentInputUserSettings::ResetAllMappingsToDefault()
 	{
 		for (UIndependentInputMappingContext* Mapping : CurrentMappings)
 		{
-			IndependentInputSubsystem->ApplyMappingContextMapping(Mapping);
+			if (IndependentInputSubsystem->HasInputMappingContext(Mapping))
+				IndependentInputSubsystem->ApplyMappingContextMapping(Mapping);
 		}
 	}
-	
+
 	OnSettingsChanged.Broadcast(this);
 	OnSettingsApplied.Broadcast();
 }
@@ -202,18 +246,28 @@ void UIndependentInputUserSettings::DiscardPendingChanges()
 {
 	bool bBroadcast = PendingMappings.Num() > 0;
 	PendingMappings.Empty();
-	
+
 	if (bBroadcast)
 		OnSettingsChanged.Broadcast(this);
 }
 
 void UIndependentInputUserSettings::ApplySettings()
 {
+	UIndependentInputLocalPlayerSubsystem* IndependentInputSubsystem = UIndependentInputLocalPlayerSubsystem::Get(GetLocalPlayer());
+	if (!IsValid(IndependentInputSubsystem))
+		return;
+
+	// Apply the pending mappings to the current mappings and apply them to the input subsystem.
 	for (const TPair<UIndependentInputMappingContext*, FIndependentInputBindingSet>& PendingMappingPair : PendingMappings)
 	{
 		bool bWasDirty = false;
+
+		// Capture previous BindingSet if already added.
 		FIndependentInputBindingSet* PreviousBindingSet = Mappings.Find(PendingMappingPair.Key);
+
+		// Making sure the PendingMapping is added to the Mappings list.
 		FIndependentInputBindingSet& BindingSet = Mappings.FindOrAdd(PendingMappingPair.Key);
+
 		for (TPair<FName, FIndependentInputBindingOverride> BindingOverridePair : PendingMappingPair.Value.Bindings)
 		{
 			if (PreviousBindingSet)
@@ -231,17 +285,13 @@ void UIndependentInputUserSettings::ApplySettings()
 			}
 			else
 			{
+				// If previous binding set was not found but we have new pending mapping, it means the mapping is dirty for given IndependentInputMappingContext.
 				bWasDirty = true;
 			}
 
 			BindingSet.Bindings.FindOrAdd(BindingOverridePair.Key) = BindingOverridePair.Value;
 			if (bWasDirty)
-			{
-				if (UIndependentInputLocalPlayerSubsystem* IndependentInputSubsystem = UIndependentInputLocalPlayerSubsystem::Get(GetLocalPlayer()))
-				{
-					IndependentInputSubsystem->ApplyMappingContextMapping(PendingMappingPair.Key);
-				}
-			}
+				IndependentInputSubsystem->ApplyMappingContextMapping(PendingMappingPair.Key);
 		}
 	}
 

@@ -151,13 +151,15 @@ bool UIndependentInputLocalPlayerSubsystem::RemoveInputMappingContext(
 	FIndependentInputMappingContextsInfo* FoundMappingContextInfo = RegisteredMappingContexts.Find(InMappingContext);
 	if (FoundMappingContextInfo && IsValid(FoundMappingContextInfo->MappingContext) && GetEnhancedInputSubsystem())
 	{
-		RegisteredMappingContexts.Remove(InMappingContext);
+		FIndependentInputMappingContextsInfo ContextInfo = RegisteredMappingContexts[InMappingContext];
 
 		/**
 		 * Remove the mapping context from the enhanced input subsystem.
 		 * This ensures that the input mappings are no longer active for the local player.
 		 */
-		GetEnhancedInputSubsystem()->RemoveMappingContext(FoundMappingContextInfo->MappingContext, Options);
+		GetEnhancedInputSubsystem()->RemoveMappingContext(ContextInfo.MappingContext, Options);
+		RegisteredMappingContexts.Remove(InMappingContext);
+
 		return true;
 	}
 
@@ -270,7 +272,6 @@ void UIndependentInputLocalPlayerSubsystem::ApplyMappingContextMapping(const UIn
 		ModifyOptions = MappingContextInfo->ModifyOptions;
 		Priority = MappingContextInfo->Priority;
 		RemoveInputMappingContext(InMappingContext);
+		AddInputMappingContext(InMappingContext, Priority, ModifyOptions);
 	}
-
-	AddInputMappingContext(InMappingContext, Priority, ModifyOptions);
 }

@@ -14,9 +14,6 @@ bool FIndependentInputCaptureInfo::IsKeyCompatibleForCapture(FKey InKey) const
 	if (SupportedCaptureInputDevice == 0)
 		return false;
 
-	if (EscapeKeys.Contains(InKey))
-		return false;
-
 	if (HasFlag(SupportedCaptureInputDevice, EIndependentInputBindingDeviceMask::Controller))
 	{
 		if (!InKey.IsGamepadKey() && !HasFlag(SupportedCaptureInputDevice, EIndependentInputBindingDeviceMask::KeyboardMouse))

@@ -4,6 +4,8 @@
 
 #define LOCTEXT_NAMESPACE "FIndependentInputMapperModule"
 
+DEFINE_LOG_CATEGORY(LogIndependentInputMapper);
+
 void FIndependentInputMapperModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module

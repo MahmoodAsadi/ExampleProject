@@ -37,6 +37,11 @@ void SIndependentInputKeySelector::Construct(const FArguments& InArgs)
 		];
 }
 
+SIndependentInputKeySelector::~SIndependentInputKeySelector()
+{
+	CancelCapture();
+}
+
 FInputChord SIndependentInputKeySelector::GetSelectedKey() const
 {
 	return SelectedKey.IsSet() ? SelectedKey.Get() : EKeys::Invalid;
@@ -56,16 +61,19 @@ void SIndependentInputKeySelector::SetMargin(TAttribute<FMargin> InMargin)
 	Margin = InMargin;
 }
 
-void SIndependentInputKeySelector::SetButtonStyle(const FButtonStyle* ButtonStyle)
+void SIndependentInputKeySelector::SetButtonStyle(const FButtonStyle* InButtonStyle)
 {
+	ButtonStyle = InButtonStyle ? *InButtonStyle : FButtonStyle();
+
 	if (Button.IsValid())
-		Button->SetButtonStyle(ButtonStyle);
+		Button->SetButtonStyle(&ButtonStyle);
 }
 
 void SIndependentInputKeySelector::SetTextStyle(const FTextBlockStyle* InTextStyle)
 {
+	TextStyle = InTextStyle ? *InTextStyle : FTextBlockStyle();
 	if (TextBlock.IsValid())
-		TextBlock->SetTextStyle(InTextStyle);
+		TextBlock->SetTextStyle(&TextStyle);
 }
 
 void SIndependentInputKeySelector::SetTextJustification(ETextJustify::Type Justification)
@@ -93,8 +101,7 @@ void SIndependentInputKeySelector::SetInputKeyCaptureInfo(const FIndependentInpu
 
 void SIndependentInputKeySelector::OnFocusLost(const FFocusEvent& InFocusEvent)
 {
-	if (bIsSelectingKey)
-		SetIsSelectingKey(false);
+	CancelCapture();
 }
 
 FText SIndependentInputKeySelector::GetSelectedKeyText() const
@@ -167,7 +174,7 @@ bool SIndependentInputKeySelector::ProcessKeyUp(const FKeyEvent& InKeyEvent)
 	if (!bIsSelectingKey)
 		return false;
 
-	if (InputKeyCaptureInfo.IsEscapeKey(InKeyEvent.GetKey()))
+	if (bEscapeCancelsSelection && InputKeyCaptureInfo.IsEscapeKey(InKeyEvent.GetKey()))
 	{
 		CancelCapture();
 		return true;
@@ -179,7 +186,7 @@ bool SIndependentInputKeySelector::ProcessKeyUp(const FKeyEvent& InKeyEvent)
 		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& InAnalogInputEvent)
@@ -188,7 +195,7 @@ bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& I
 		return false;
 
 	FKey AnalogKey = InAnalogInputEvent.GetKey();
-	if (InputKeyCaptureInfo.IsEscapeKey(AnalogKey))
+	if (bEscapeCancelsSelection && InputKeyCaptureInfo.IsEscapeKey(AnalogKey))
 	{
 		CancelCapture();
 		return true;
@@ -206,10 +213,6 @@ bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& I
 					{
 						FModifierKeysState ModifierState;
 						CompletedCapture(FKeyEvent(AnalogKey, FModifierKeysState(), InAnalogInputEvent.GetInputDeviceId(), false, 0, 0));
-						return true;
-					}
-					else
-					{
 						return true;
 					}
 				}
@@ -245,7 +248,7 @@ bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& I
 				case EPairedAxis::Unpaired:
 				case EPairedAxis::Z:
 				default:
-					return true;
+					return false;
 				}
 			}
 
@@ -257,10 +260,6 @@ bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& I
 					{
 						FModifierKeysState ModifierState;
 						CompletedCapture(FKeyEvent(CapturingKey, FModifierKeysState(), InAnalogInputEvent.GetInputDeviceId(), false, 0, 0));
-						return true;
-					}
-					else
-					{
 						return true;
 					}
 				}
@@ -278,7 +277,7 @@ bool SIndependentInputKeySelector::ProcessAnalogInput(const FAnalogInputEvent& I
 		}
 	}
 
-	return true;
+	return false;
 }
 
 bool SIndependentInputKeySelector::ProcessMouseMove(const FPointerEvent& InPointerEvent)
@@ -303,10 +302,10 @@ bool SIndependentInputKeySelector::ProcessMouseMove(const FPointerEvent& InPoint
 		}
 
 	default:
-		return true;
+		return false;
 	}
 
-	if (InputKeyCaptureInfo.IsEscapeKey(CapturingKey))
+	if (bEscapeCancelsSelection && InputKeyCaptureInfo.IsEscapeKey(CapturingKey))
 	{
 		CancelCapture();
 		return true;
@@ -322,7 +321,7 @@ bool SIndependentInputKeySelector::ProcessMouseMove(const FPointerEvent& InPoint
 		}
 	}
 
-	return true;
+	return false;
 	
 }
 

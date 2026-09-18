@@ -42,11 +42,11 @@ public:
 protected:
 
 	/** The button style used at runtime */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter = "GetButtonStyle", Setter = "SetButtonStyle", Category = Appearance, meta = (DisplayName = "Style"))
-	FButtonStyle WidgetStyle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter, Setter, Category = Appearance)
+	FButtonStyle ButtonStyle;
 
 	/** The button style used at runtime */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter, Setter, Category = Appearance, meta = (DisplayName = "Text Style"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter, Setter, Category = Appearance)
 	FTextBlockStyle TextStyle;
 
 	/** The currently selected key chord. */
@@ -68,6 +68,10 @@ protected:
 	/** The information about the key capture. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter, Setter, Category = Appearance)
 	FIndependentInputCaptureInfo InputKeyCaptureInfo;
+
+	/** Whether Escape and configured cancel keys cancel selection instead of being captured. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Getter = "GetEscapeCancelsSelection", Setter = "SetEscapeCancelsSelection", Category = "Key Selection")
+	bool bEscapeCancelsSelection = true;
 
 	/** How the key text should be justified within its display area (left/center/right). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Appearance)
@@ -117,7 +121,7 @@ public:
 
 	/** Sets the style of the button used to start key selection mode. */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Key Selector")
-	void SetButtonStyle(const FButtonStyle& ButtonStyle);
+	void SetButtonStyle(const FButtonStyle& InButtonStyle);
 
 	/** Returns the style of the text used inside the button. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Key Selector")
@@ -166,6 +170,14 @@ public:
 	/** Sets the capture settings that control how input keys are detected. */
 	UFUNCTION(BlueprintCallable, Category = "Independent Input Key Selector")
 	void SetInputKeyCaptureInfo(const FIndependentInputCaptureInfo& InInputKeyCaptureInfo);
+
+	/** Returns whether Escape and configured cancel keys cancel key selection. */
+	UFUNCTION(BlueprintPure, Category = "Independent Input Key Selector")
+	bool GetEscapeCancelsSelection() const;
+
+	/** Sets whether Escape and configured cancel keys cancel key selection. */
+	UFUNCTION(BlueprintCallable, Category = "Independent Input Key Selector")
+	void SetEscapeCancelsSelection(bool bInEscapeCancelsSelection);
 
 	/** Returns the current vertical alignment used for key text rendering. */
 	UFUNCTION(BlueprintPure, Category = "Independent Input Key Selector")

@@ -12,7 +12,7 @@
 
 UIndependentInputKeySelector::UIndependentInputKeySelector(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	WidgetStyle = UE::Slate::Private::FDefaultStyleCache::GetRuntime().GetButtonStyle();
+	ButtonStyle = UE::Slate::Private::FDefaultStyleCache::GetRuntime().GetButtonStyle();
 	TextStyle = UE::Slate::Private::FDefaultStyleCache::GetRuntime().GetTextBlockStyle();
 
 	KeySelectionText = NSLOCTEXT("InputKeySelector", "ModifingKeySelectionText", "Press Any Key...");
@@ -32,11 +32,12 @@ TSharedRef<SWidget> UIndependentInputKeySelector::RebuildWidget()
 	MyInputKeySelector = SNew(SIndependentInputKeySelector)
 		.SelectedKey(SelectedKey)
 		.Margin(Margin)
-		.ButtonStyle(&WidgetStyle)
+		.ButtonStyle(&ButtonStyle)
 		.TextStyle(&TextStyle)
 		.KeySelectionText(KeySelectionText)
 		.NoKeySpecifiedText(NoKeySpecifiedText)
 		.InputKeyCaptureInfo(InputKeyCaptureInfo)
+		.EscapeCancelsSelection(bEscapeCancelsSelection)
 		.OnKeySelected(BIND_UOBJECT_DELEGATE(SIndependentInputKeySelector::FOnKeySelected, HandleKeySelected))
 		.OnSelectingKeyChanged(BIND_UOBJECT_DELEGATE(SIndependentInputKeySelector::FOnSelectingKeyChanged, HandleSelectingKeyChanged))
 		.OnKeySelectionCanceled(BIND_UOBJECT_DELEGATE(SIndependentInputKeySelector::FOnKeySelectionCanceled, HandleSelectingKeyCanceled));
@@ -65,11 +66,12 @@ void UIndependentInputKeySelector::SynchronizeProperties()
 
 	MyInputKeySelector->SetSelectedKey(SelectedKey);
 	MyInputKeySelector->SetMargin(Margin);
-	MyInputKeySelector->SetButtonStyle(&WidgetStyle);
+	MyInputKeySelector->SetButtonStyle(&ButtonStyle);
 	MyInputKeySelector->SetTextStyle(&TextStyle);
 	MyInputKeySelector->SetKeySelectionText(KeySelectionText);
 	MyInputKeySelector->SetNoKeySpecifiedText(NoKeySpecifiedText);
 	MyInputKeySelector->SetInputKeyCaptureInfo(InputKeyCaptureInfo);
+	MyInputKeySelector->SetEscapeCancelsSelection(bEscapeCancelsSelection);
 	MyInputKeySelector->SetTextVerticalAlignment(TextVerticalAlignment);
 	MyInputKeySelector->SetTextHorizontalAlignment(TextHorizontalAlignment);
 	MyInputKeySelector->SetTextJustification(TextJustification);
@@ -77,15 +79,15 @@ void UIndependentInputKeySelector::SynchronizeProperties()
 
 const FButtonStyle& UIndependentInputKeySelector::GetButtonStyle() const
 {
-	return WidgetStyle;
+	return ButtonStyle;
 }
 
-void UIndependentInputKeySelector::SetButtonStyle(const FButtonStyle& ButtonStyle)
+void UIndependentInputKeySelector::SetButtonStyle(const FButtonStyle& InButtonStyle)
 {
+	ButtonStyle = InButtonStyle;
+
 	if (MyInputKeySelector.IsValid())
 		MyInputKeySelector->SetButtonStyle(&ButtonStyle);
-
-	WidgetStyle = ButtonStyle;
 }
 
 const FTextBlockStyle& UIndependentInputKeySelector::GetTextStyle() const
@@ -95,10 +97,10 @@ const FTextBlockStyle& UIndependentInputKeySelector::GetTextStyle() const
 
 void UIndependentInputKeySelector::SetTextStyle(const FTextBlockStyle& InTextStyle)
 {
-	if (MyInputKeySelector.IsValid())
-		MyInputKeySelector->SetTextStyle(&InTextStyle);
-
 	TextStyle = InTextStyle;
+
+	if (MyInputKeySelector.IsValid())
+		MyInputKeySelector->SetTextStyle(&TextStyle);
 }
 
 FInputChord UIndependentInputKeySelector::GetSelectedKey() const
@@ -168,6 +170,19 @@ void UIndependentInputKeySelector::SetInputKeyCaptureInfo(const FIndependentInpu
 		MyInputKeySelector->SetInputKeyCaptureInfo(InInputKeyCaptureInfo);
 
 	InputKeyCaptureInfo = InInputKeyCaptureInfo;
+}
+
+bool UIndependentInputKeySelector::GetEscapeCancelsSelection() const
+{
+	return bEscapeCancelsSelection;
+}
+
+void UIndependentInputKeySelector::SetEscapeCancelsSelection(bool bInEscapeCancelsSelection)
+{
+	bEscapeCancelsSelection = bInEscapeCancelsSelection;
+
+	if (MyInputKeySelector.IsValid())
+		MyInputKeySelector->SetEscapeCancelsSelection(bEscapeCancelsSelection);
 }
 
 void UIndependentInputKeySelector::SetTextVerticalAlignment(const EVerticalAlignment& VerticalAlignment)
