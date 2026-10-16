@@ -21,10 +21,7 @@ public:
 	 * @param Querier								The object that is requesting the creation of the new context.
 	 * @return A new UInputMappingContext with applied overrides, or nullptr if creation fails.
 	 */
-	static UInputMappingContext* MakeInputMappingContext(
-		const UIndependentInputMappingContext* IndependentInputMappingContext, 
-		ULocalPlayer* LocalPlayer, 
-		UObject* Querier)
+	static UInputMappingContext* MakeInputMappingContext(const UIndependentInputMappingContext* IndependentInputMappingContext, ULocalPlayer* LocalPlayer, UObject* Querier)
 	{
 		if (!IsValid(LocalPlayer))
 			return nullptr;
@@ -105,12 +102,13 @@ UEnhancedInputLocalPlayerSubsystem* UIndependentInputLocalPlayerSubsystem::GetEn
 	return GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 }
 
-UInputMappingContext* UIndependentInputLocalPlayerSubsystem::AddInputMappingContext(
-	const UIndependentInputMappingContext* InMappingContext, 
-	int32 Priority, 
-	const FModifyContextOptions& Options)
+UInputMappingContext* UIndependentInputLocalPlayerSubsystem::AddInputMappingContext(const UIndependentInputMappingContext* InMappingContext, int32 Priority, const FModifyContextOptions& Options)
 {
 	if (!IsValid(InMappingContext))
+		return nullptr;
+
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInput = GetEnhancedInputSubsystem();
+	if (!IsValid(EnhancedInput) || !EnhancedInput->GetPlayerInput())
 		return nullptr;
 
 	TObjectPtr<UInputMappingContext> MappingContext;
@@ -125,21 +123,29 @@ UInputMappingContext* UIndependentInputLocalPlayerSubsystem::AddInputMappingCont
 	else
 		MappingContext = FoundMappingContextInfo->MappingContext;
 
-	RegisteredMappingContexts.Add(InMappingContext, FIndependentInputMappingContextsInfo(MappingContext, Priority, Options));
+	if (!IsValid(MappingContext))
+		return nullptr;
+
+	if (FoundMappingContextInfo && IsValid(FoundMappingContextInfo->MappingContext)
+		&& MappingContext->GetRegistrationTrackingMode() == EMappingContextRegistrationTrackingMode::CountRegistrations)
+	{
+		++FoundMappingContextInfo->RegistrationCount;
+	}
+	else
+	{
+		RegisteredMappingContexts.Add(InMappingContext, FIndependentInputMappingContextsInfo(MappingContext, Priority, Options));
+	}
 	
 	/**
 	 * Add the mapping context to the enhanced input subsystem if it is valid.
 	 * This ensures that the input mappings are applied and active for the local player.
 	 */
-	if (GetEnhancedInputSubsystem())
-		GetEnhancedInputSubsystem()->AddMappingContext(MappingContext, Priority, Options);
+	EnhancedInput->AddMappingContext(MappingContext, Priority, Options);
 
 	return MappingContext;
 }
 
-bool UIndependentInputLocalPlayerSubsystem::RemoveInputMappingContext(
-	const UIndependentInputMappingContext* InMappingContext, 
-	const FModifyContextOptions& Options)
+bool UIndependentInputLocalPlayerSubsystem::RemoveInputMappingContext(const UIndependentInputMappingContext* InMappingContext, const FModifyContextOptions& Options)
 {
 	if (!IsValid(InMappingContext))
 		return false;
@@ -157,8 +163,17 @@ bool UIndependentInputLocalPlayerSubsystem::RemoveInputMappingContext(
 		 * Remove the mapping context from the enhanced input subsystem.
 		 * This ensures that the input mappings are no longer active for the local player.
 		 */
+		if (!GetEnhancedInputSubsystem()->GetPlayerInput())
+			return false;
+
+		const bool bKeepRegistration = ContextInfo.MappingContext->GetRegistrationTrackingMode()
+			== EMappingContextRegistrationTrackingMode::CountRegistrations && ContextInfo.RegistrationCount > 1;
+		if (bKeepRegistration)
+			--FoundMappingContextInfo->RegistrationCount;
+		else
+			RegisteredMappingContexts.Remove(InMappingContext);
+
 		GetEnhancedInputSubsystem()->RemoveMappingContext(ContextInfo.MappingContext, Options);
-		RegisteredMappingContexts.Remove(InMappingContext);
 
 		return true;
 	}
@@ -261,17 +276,26 @@ void UIndependentInputLocalPlayerSubsystem::ApplyMappingContextMapping(const UIn
 	if (!IsValid(InMappingContext))
 		return;
 
-	/**
-	* Reapply the mapping context to ensure that the latest bindings are used.
-	* This is done by removing the mapping context and then adding it back with the same priority and options.
-	*/
-	int32 Priority = 0;
-	FModifyContextOptions ModifyOptions = FModifyContextOptions();
-	if (FIndependentInputMappingContextsInfo* MappingContextInfo = RegisteredMappingContexts.Find(InMappingContext))
-	{
-		ModifyOptions = MappingContextInfo->ModifyOptions;
-		Priority = MappingContextInfo->Priority;
-		RemoveInputMappingContext(InMappingContext);
-		AddInputMappingContext(InMappingContext, Priority, ModifyOptions);
-	}
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInput = GetEnhancedInputSubsystem();
+	if (!IsValid(EnhancedInput) || !EnhancedInput->GetPlayerInput() || !HasInputMappingContext(InMappingContext))
+		return;
+
+	const FIndependentInputMappingContextsInfo PreviousInfo = RegisteredMappingContexts.FindChecked(InMappingContext);
+	// Build first so a failed rebuild leaves the active context intact.
+	UInputMappingContext* NewContext = UCustomInputMappingContext::MakeInputMappingContext(InMappingContext, GetLocalPlayer(), this);
+	if (!IsValid(NewContext))
+		return;
+
+	const int32 OldCount = PreviousInfo.RegistrationCount;
+	const int32 NewCount = NewContext->GetRegistrationTrackingMode() == EMappingContextRegistrationTrackingMode::CountRegistrations
+		? OldCount : 1;
+	FIndependentInputMappingContextsInfo NewInfo(NewContext, PreviousInfo.Priority, PreviousInfo.ModifyOptions);
+	NewInfo.RegistrationCount = NewCount;
+	RegisteredMappingContexts.Add(InMappingContext, NewInfo);
+
+	// Release every old registration before installing the regenerated bindings.
+	for (int32 Index = 0; Index < OldCount; ++Index)
+		EnhancedInput->RemoveMappingContext(PreviousInfo.MappingContext, PreviousInfo.ModifyOptions);
+	for (int32 Index = 0; Index < NewCount; ++Index)
+		EnhancedInput->AddMappingContext(NewContext, PreviousInfo.Priority, PreviousInfo.ModifyOptions);
 }

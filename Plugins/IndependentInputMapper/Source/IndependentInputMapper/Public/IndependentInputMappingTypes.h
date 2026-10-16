@@ -294,6 +294,7 @@ public:
 		: MappingContext(InMappingContext)
 		, Priority(InPriority)
 		, ModifyOptions(InModifyOptions)
+		, RegistrationCount(1)
 	{
 	}
 
@@ -305,6 +306,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BindingSet)
 	FModifyContextOptions ModifyOptions;
+
+	/** Outstanding registrations; untracked contexts use one until removed. */
+	UPROPERTY(Transient)
+	int32 RegistrationCount = 0;
 
 };
 
